@@ -1,11 +1,15 @@
 """Chat and conversation router"""
 from fastapi import APIRouter, HTTPException, Depends
+from fastapi.responses import StreamingResponse
 from typing import List
+import json
+import asyncio
 from app.models.chat import (
     ConversationCreate,
     ConversationResponse,
     ConversationUpdate,
-    MessageResponse
+    MessageResponse,
+    QueryRequest
 )
 from app.utils.dependencies import get_current_user
 from app.utils.mock_database import mock_db
@@ -228,3 +232,106 @@ async def get_messages(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get messages: {str(e)}")
+
+
+@router.post("/query")
+async def chat_query(
+    query_data: QueryRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Send a message and receive a streaming AI response
+
+    - Requires valid access token
+    - Verifies user owns the conversation
+    - Saves user message to database
+    - Streams AI response using Server-Sent Events (SSE)
+    - Saves AI response to database when complete
+    """
+    try:
+        # Verify conversation exists and user owns it
+        conversation = mock_db.find_conversation_by_id(query_data.conversation_id)
+
+        if not conversation:
+            raise HTTPException(status_code=404, detail="Conversation not found")
+
+        if conversation["user_id"] != current_user["id"]:
+            raise HTTPException(status_code=403, detail="Access denied")
+
+        # Save user message
+        user_message = mock_db.create_message(
+            conversation_id=query_data.conversation_id,
+            role="user",
+            content=query_data.message
+        )
+
+        # Update conversation timestamp
+        mock_db.update_conversation(query_data.conversation_id)
+
+        # Define the streaming response generator
+        async def generate_response():
+            try:
+                # Mock AI response for now (before implementing RAG)
+                mock_response = f"I understand you're asking about: '{query_data.message}'. This is a mock response. In production, this would use RAG to search SOPs and provide relevant information based on your role ({current_user['role']})."
+
+                # Stream the response word by word
+                words = mock_response.split()
+                full_response = ""
+
+                for i, word in enumerate(words):
+                    # Add space before word (except first)
+                    if i > 0:
+                        full_response += " "
+                    full_response += word
+
+                    # Send SSE event with the word
+                    event_data = {
+                        "type": "token",
+                        "content": word,
+                        "full_content": full_response
+                    }
+                    yield f"data: {json.dumps(event_data)}\n\n"
+
+                    # Small delay to simulate streaming
+                    await asyncio.sleep(0.05)
+
+                # Save assistant message to database
+                assistant_message = mock_db.create_message(
+                    conversation_id=query_data.conversation_id,
+                    role="assistant",
+                    content=full_response
+                )
+
+                # Update conversation timestamp again
+                mock_db.update_conversation(query_data.conversation_id)
+
+                # Send completion event
+                completion_data = {
+                    "type": "complete",
+                    "message_id": assistant_message["id"],
+                    "full_content": full_response
+                }
+                yield f"data: {json.dumps(completion_data)}\n\n"
+
+            except Exception as e:
+                # Send error event
+                error_data = {
+                    "type": "error",
+                    "message": str(e)
+                }
+                yield f"data: {json.dumps(error_data)}\n\n"
+
+        return StreamingResponse(
+            generate_response(),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "X-Accel-Buffering": "no"
+            }
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to process query: {str(e)}")

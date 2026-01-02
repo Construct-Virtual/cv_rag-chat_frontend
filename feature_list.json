@@ -135,7 +135,7 @@
       "Step 10: Verify complete message is saved to database",
       "Step 11: Verify conversation updated_at timestamp updates"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
