@@ -19,6 +19,8 @@ class ConversationResponse(BaseModel):
     message_count: int = 0
     last_message_preview: Optional[str] = None
     last_message_at: Optional[str] = None
+    is_shared: bool = False
+    share_token: Optional[str] = None
 
 
 class ConversationUpdate(BaseModel):

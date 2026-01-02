@@ -38,6 +38,8 @@ interface Conversation {
   message_count: number;
   last_message_preview?: string;
   last_message_at?: string;
+  is_shared?: boolean;
+  share_token?: string;
 }
 
 interface Source {
@@ -80,6 +82,9 @@ export default function ChatPage() {
   const [deleteConfirmConvId, setDeleteConfirmConvId] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [shareUrl, setShareUrl] = useState("");
+  const [isSharing, setIsSharing] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
 
@@ -396,7 +401,57 @@ export default function ChatPage() {
     return null;
   }
 
-  // Filter conversations based on search query
+  const handleShare = async () => {
+    if (!currentConversation) return;
+
+    setIsSharing(true);
+    try {
+      const response = await apiPost(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/chat/conversations/${currentConversation.id}/share`,
+        {}
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to share conversation");
+      }
+
+      const data = await response.json();
+      const shareToken = data.share_token;
+      const url = `${window.location.origin}/shared/${shareToken}`;
+      setShareUrl(url);
+      setIsShareModalOpen(true);
+
+      // Update current conversation to reflect shared status
+      setCurrentConversation({ ...currentConversation, is_shared: true, share_token: shareToken });
+
+      // Reload conversations to update sidebar
+      await loadConversations();
+
+      setToast({ message: "Conversation shared successfully!", type: "success" });
+    } catch (err) {
+      console.error("Failed to share conversation:", err);
+      setToast({ message: "Failed to share conversation", type: "error" });
+    } finally {
+      setIsSharing(false);
+    }
+  };
+
+  const handleCopyShareLink = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setToast({ message: "Link copied to clipboard!", type: "success" });
+    } catch (err) {
+      console.error("Failed to copy link:", err);
+      setToast({ message: "Failed to copy link", type: "error" });
+    }
+  };
+
+  const handleCloseShareModal = () => {
+    setIsShareModalOpen(false);
+    setShareUrl("");
+  };
+
+    // Filter conversations based on search query
   const filteredConversations = conversations.filter((conv) =>
     conv.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -608,16 +663,29 @@ export default function ChatPage() {
                     </button>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2 group">
-                    <h2 className="text-lg font-semibold">{currentConversation.title}</h2>
+                  <div className="flex items-center justify-between w-full">
+                    <div className="flex items-center gap-2 group">
+                      <h2 className="text-lg font-semibold">{currentConversation.title}</h2>
+                      <button
+                        onClick={startEditingTitle}
+                        className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-[#2A2A2A] transition-all"
+                        title="Rename conversation"
+                      >
+                        <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M11 4L13 6L6 13H4V11L11 4Z" />
+                        </svg>
+                      </button>
+                    </div>
                     <button
-                      onClick={startEditingTitle}
-                      className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-[#2A2A2A] transition-all"
-                      title="Rename conversation"
+                      onClick={handleShare}
+                      disabled={isSharing}
+                      className="flex items-center gap-2 px-4 py-2 bg-[#3B82F6] hover:bg-[#2563EB] text-white rounded-lg transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Share conversation"
                     >
                       <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M11 4L13 6L6 13H4V11L11 4Z" />
+                        <path d="M4 12v2a2 2 0 002 2h8a2 2 0 002-2v-2M16 6l-4-4m0 0L8 6m4-4v12" />
                       </svg>
+                      {isSharing ? "Sharing..." : "Share"}
                     </button>
                   </div>
                 )}
@@ -819,6 +887,40 @@ export default function ChatPage() {
                 className="px-4 py-2 bg-[#EF4444] hover:bg-[#DC2626] text-white rounded-lg transition-colors"
               >
                 Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Share Modal */}
+      {isShareModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold mb-2">Share Conversation</h3>
+            <p className="text-[#A1A1A1] text-sm mb-4">
+              Anyone with this link can view this conversation (read-only).
+            </p>
+            <div className="bg-[#2A2A2A] rounded-lg p-3 mb-4 flex items-center gap-2">
+              <input
+                type="text"
+                value={shareUrl}
+                readOnly
+                className="flex-1 bg-transparent text-[#F5F5F5] text-sm focus:outline-none"
+              />
+              <button
+                onClick={handleCopyShareLink}
+                className="px-3 py-1.5 bg-[#3B82F6] hover:bg-[#2563EB] text-white rounded text-sm transition-colors flex-shrink-0"
+              >
+                Copy Link
+              </button>
+            </div>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={handleCloseShareModal}
+                className="px-4 py-2 bg-[#2A2A2A] hover:bg-[#3A3A3A] text-[#F5F5F5] rounded-lg transition-colors"
+              >
+                Close
               </button>
             </div>
           </div>

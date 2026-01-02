@@ -278,7 +278,7 @@
       "Step 10: Verify link copied to clipboard",
       "Step 11: Verify success toast notification"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",

@@ -44,7 +44,9 @@ async def create_conversation(
             title=conversation["title"],
             created_at=conversation["created_at"],
             updated_at=conversation["updated_at"],
-            message_count=message_count
+            message_count=message_count,
+            is_shared=conversation.get("is_shared", False),
+            share_token=conversation.get("share_token")
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to create conversation: {str(e)}")
@@ -120,7 +122,9 @@ async def get_conversation(
             title=conversation["title"],
             created_at=conversation["created_at"],
             updated_at=conversation["updated_at"],
-            message_count=message_count
+            message_count=message_count,
+            is_shared=conversation.get("is_shared", False),
+            share_token=conversation.get("share_token")
         )
     except HTTPException:
         raise
@@ -166,7 +170,9 @@ async def update_conversation(
             title=updated_conversation["title"],
             created_at=updated_conversation["created_at"],
             updated_at=updated_conversation["updated_at"],
-            message_count=message_count
+            message_count=message_count,
+            is_shared=conversation.get("is_shared", False),
+            share_token=conversation.get("share_token")
         )
     except HTTPException:
         raise
@@ -371,3 +377,148 @@ async def chat_query(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to process query: {str(e)}")
+
+
+@router.post("/conversations/{conversation_id}/share", response_model=ConversationResponse)
+async def share_conversation(
+    conversation_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Enable sharing for a conversation
+
+    - Requires valid access token
+    - User must own the conversation
+    - Generates unique share_token
+    - Sets is_shared to true
+    - Returns updated conversation with share_token
+    """
+    try:
+        # Get conversation
+        conversation = mock_db.find_conversation_by_id(conversation_id)
+        if not conversation:
+            raise HTTPException(status_code=404, detail="Conversation not found")
+
+        # Check ownership
+        if conversation["user_id"] != current_user["id"]:
+            raise HTTPException(status_code=403, detail="Access denied")
+
+        # Enable sharing
+        updated_conversation = mock_db.enable_conversation_sharing(conversation_id)
+        if not updated_conversation:
+            raise HTTPException(status_code=500, detail="Failed to enable sharing")
+
+        message_count = mock_db.get_message_count(conversation_id)
+
+        return ConversationResponse(
+            id=updated_conversation["id"],
+            user_id=updated_conversation["user_id"],
+            title=updated_conversation["title"],
+            created_at=updated_conversation["created_at"],
+            updated_at=updated_conversation["updated_at"],
+            message_count=message_count,
+            is_shared=updated_conversation.get("is_shared", False),
+            share_token=updated_conversation.get("share_token")
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to share conversation: {str(e)}")
+
+
+@router.delete("/conversations/{conversation_id}/share")
+async def unshare_conversation(
+    conversation_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Disable sharing for a conversation
+
+    - Requires valid access token
+    - User must own the conversation
+    - Removes share_token
+    - Sets is_shared to false
+    """
+    try:
+        # Get conversation
+        conversation = mock_db.find_conversation_by_id(conversation_id)
+        if not conversation:
+            raise HTTPException(status_code=404, detail="Conversation not found")
+
+        # Check ownership
+        if conversation["user_id"] != current_user["id"]:
+            raise HTTPException(status_code=403, detail="Access denied")
+
+        # Disable sharing
+        updated_conversation = mock_db.disable_conversation_sharing(conversation_id)
+        if not updated_conversation:
+            raise HTTPException(status_code=500, detail="Failed to disable sharing")
+
+        return {"message": "Sharing disabled successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to disable sharing: {str(e)}")
+
+
+@router.get("/shared/{share_token}", response_model=ConversationResponse)
+async def get_shared_conversation(share_token: str):
+    """
+    Get a shared conversation by share token (public endpoint)
+
+    - No authentication required
+    - Returns conversation if share_token is valid and is_shared is true
+    - Used for viewing shared conversations
+    """
+    try:
+        conversation = mock_db.find_conversation_by_share_token(share_token)
+        if not conversation:
+            raise HTTPException(status_code=404, detail="Shared conversation not found or sharing has been disabled")
+
+        message_count = mock_db.get_message_count(conversation["id"])
+
+        return ConversationResponse(
+            id=conversation["id"],
+            user_id=conversation["user_id"],
+            title=conversation["title"],
+            created_at=conversation["created_at"],
+            updated_at=conversation["updated_at"],
+            message_count=message_count,
+            is_shared=conversation.get("is_shared", False),
+            share_token=conversation.get("share_token")
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get shared conversation: {str(e)}")
+
+
+@router.get("/shared/{share_token}/messages", response_model=List[MessageResponse])
+async def get_shared_conversation_messages(share_token: str):
+    """
+    Get messages from a shared conversation (public endpoint)
+
+    - No authentication required
+    - Returns messages if share_token is valid and is_shared is true
+    """
+    try:
+        conversation = mock_db.find_conversation_by_share_token(share_token)
+        if not conversation:
+            raise HTTPException(status_code=404, detail="Shared conversation not found or sharing has been disabled")
+
+        messages = mock_db.find_messages_by_conversation(conversation["id"])
+
+        return [
+            MessageResponse(
+                id=msg["id"],
+                conversation_id=msg["conversation_id"],
+                role=msg["role"],
+                content=msg["content"],
+                created_at=msg["created_at"]
+            )
+            for msg in messages
+        ]
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get shared conversation messages: {str(e)}")

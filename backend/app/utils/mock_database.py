@@ -118,7 +118,9 @@ class MockDatabase:
             "user_id": user_id,
             "title": title or "New Conversation",
             "created_at": datetime.utcnow().isoformat(),
-            "updated_at": datetime.utcnow().isoformat()
+            "updated_at": datetime.utcnow().isoformat(),
+            "is_shared": False,
+            "share_token": None
         }
         self.conversations.append(conversation)
         return conversation.copy()
@@ -167,6 +169,34 @@ class MockDatabase:
         # Sort by created_at and return the last one
         conv_messages.sort(key=lambda x: x["created_at"])
         return conv_messages[-1].copy()
+
+    def enable_conversation_sharing(self, conversation_id: str) -> Optional[Dict[str, Any]]:
+        """Enable sharing for a conversation and generate share token"""
+        for conv in self.conversations:
+            if conv["id"] == conversation_id:
+                if not conv.get("is_shared"):
+                    conv["is_shared"] = True
+                    conv["share_token"] = str(uuid.uuid4())
+                    conv["updated_at"] = datetime.utcnow().isoformat()
+                return conv.copy()
+        return None
+
+    def disable_conversation_sharing(self, conversation_id: str) -> Optional[Dict[str, Any]]:
+        """Disable sharing for a conversation"""
+        for conv in self.conversations:
+            if conv["id"] == conversation_id:
+                conv["is_shared"] = False
+                conv["share_token"] = None
+                conv["updated_at"] = datetime.utcnow().isoformat()
+                return conv.copy()
+        return None
+
+    def find_conversation_by_share_token(self, share_token: str) -> Optional[Dict[str, Any]]:
+        """Find a shared conversation by its share token"""
+        for conv in self.conversations:
+            if conv.get("share_token") == share_token and conv.get("is_shared"):
+                return conv.copy()
+        return None
 
     # Message methods
     def create_message(self, conversation_id: str, role: str, content: str) -> Dict[str, Any]:
