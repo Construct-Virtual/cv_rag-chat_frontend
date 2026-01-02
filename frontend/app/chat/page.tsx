@@ -40,7 +40,11 @@ export default function ChatPage() {
   const [isSending, setIsSending] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingContent, setStreamingContent] = useState("");
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [editedTitle, setEditedTitle] = useState("");
+  const [hoveredConvId, setHoveredConvId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const titleInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     // Check if user is authenticated
@@ -255,6 +259,71 @@ export default function ChatPage() {
     }
   };
 
+  const startEditingTitle = () => {
+    if (currentConversation) {
+      setEditedTitle(currentConversation.title);
+      setIsEditingTitle(true);
+      // Focus input after state update
+      setTimeout(() => titleInputRef.current?.focus(), 0);
+    }
+  };
+
+  const cancelEditingTitle = () => {
+    setIsEditingTitle(false);
+    setEditedTitle("");
+  };
+
+  const saveTitle = async () => {
+    if (!currentConversation || !editedTitle.trim()) {
+      cancelEditingTitle();
+      return;
+    }
+
+    const newTitle = editedTitle.trim();
+
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/chat/conversations/${currentConversation.id}`,
+        {
+          method: "PATCH",
+          headers: getAuthHeaders(),
+          body: JSON.stringify({ title: newTitle })
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to update title");
+      }
+
+      const updatedConv = await response.json();
+
+      // Update current conversation
+      setCurrentConversation(updatedConv);
+
+      // Update in conversations list
+      setConversations(conversations.map(conv =>
+        conv.id === updatedConv.id ? updatedConv : conv
+      ));
+
+      setIsEditingTitle(false);
+      setEditedTitle("");
+
+      // Show success message (simple alert for now)
+      alert("Conversation renamed successfully!");
+    } catch (err) {
+      console.error("Failed to rename conversation:", err);
+      alert("Failed to rename conversation. Please try again.");
+    }
+  };
+
+  const handleTitleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      saveTitle();
+    } else if (e.key === "Escape") {
+      cancelEditingTitle();
+    }
+  };
+
   const handleLogout = async () => {
     try {
       await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/logout`, {
@@ -337,20 +406,41 @@ export default function ChatPage() {
                 </div>
               ) : (
                 conversations.map((conv) => (
-                  <button
+                  <div
                     key={conv.id}
-                    onClick={() => setCurrentConversation(conv)}
-                    className={`w-full text-left px-3 py-2 rounded-lg transition-colors duration-200 ${
-                      currentConversation?.id === conv.id
-                        ? "bg-[#2A2A2A] text-[#F5F5F5]"
-                        : "text-[#A1A1A1] hover:bg-[#2A2A2A] hover:text-[#F5F5F5]"
-                    }`}
+                    onMouseEnter={() => setHoveredConvId(conv.id)}
+                    onMouseLeave={() => setHoveredConvId(null)}
+                    className="relative"
                   >
-                    <div className="text-sm font-medium truncate">{conv.title}</div>
-                    <div className="text-xs text-[#737373] mt-1">
-                      {conv.message_count} {conv.message_count === 1 ? "message" : "messages"}
-                    </div>
-                  </button>
+                    <button
+                      onClick={() => setCurrentConversation(conv)}
+                      className={`w-full text-left px-3 py-2 rounded-lg transition-colors duration-200 ${
+                        currentConversation?.id === conv.id
+                          ? "bg-[#2A2A2A] text-[#F5F5F5]"
+                          : "text-[#A1A1A1] hover:bg-[#2A2A2A] hover:text-[#F5F5F5]"
+                      }`}
+                    >
+                      <div className="text-sm font-medium truncate pr-8">{conv.title}</div>
+                      <div className="text-xs text-[#737373] mt-1">
+                        {conv.message_count} {conv.message_count === 1 ? "message" : "messages"}
+                      </div>
+                    </button>
+                    {hoveredConvId === conv.id && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setCurrentConversation(conv);
+                          startEditingTitle();
+                        }}
+                        className="absolute right-2 top-2 p-1 rounded hover:bg-[#3A3A3A] transition-colors"
+                        title="Rename conversation"
+                      >
+                        <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M11 4L13 6L6 13H4V11L11 4Z" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
                 ))
               )}
             </div>
@@ -363,7 +453,44 @@ export default function ChatPage() {
             <>
               {/* Chat Header */}
               <div className="border-b border-[#2A2A2A] bg-[#1A1A1A] px-6 py-4">
-                <h2 className="text-lg font-semibold">{currentConversation.title}</h2>
+                {isEditingTitle ? (
+                  <div className="flex items-center gap-2">
+                    <input
+                      ref={titleInputRef}
+                      type="text"
+                      value={editedTitle}
+                      onChange={(e) => setEditedTitle(e.target.value)}
+                      onKeyDown={handleTitleKeyDown}
+                      onBlur={saveTitle}
+                      className="flex-1 text-lg font-semibold bg-[#2A2A2A] border border-[#3B82F6] rounded px-3 py-1 text-[#F5F5F5] focus:outline-none"
+                    />
+                    <button
+                      onClick={saveTitle}
+                      className="px-3 py-1 bg-[#3B82F6] hover:bg-[#2563EB] text-white rounded text-sm transition-colors"
+                    >
+                      Save
+                    </button>
+                    <button
+                      onClick={cancelEditingTitle}
+                      className="px-3 py-1 bg-[#2A2A2A] hover:bg-[#3A3A3A] text-[#A1A1A1] rounded text-sm transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 group">
+                    <h2 className="text-lg font-semibold">{currentConversation.title}</h2>
+                    <button
+                      onClick={startEditingTitle}
+                      className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-[#2A2A2A] transition-all"
+                      title="Rename conversation"
+                    >
+                      <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M11 4L13 6L6 13H4V11L11 4Z" />
+                      </svg>
+                    </button>
+                  </div>
+                )}
                 <p className="text-xs text-[#737373] mt-1">
                   {currentConversation.message_count} {currentConversation.message_count === 1 ? "message" : "messages"}
                 </p>
