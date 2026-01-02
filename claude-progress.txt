@@ -987,3 +987,49 @@ Clear Next Cache: cd frontend && rm -rf .next
 ---
 End of Session 9
 
+
+SESSION 10 - SESSION EXPIRATION REDIRECT IMPLEMENTATION
+========================================================
+
+Date: 2026-01-03
+Agent: Implementation Agent
+Status: Complete
+
+WHAT WAS ACCOMPLISHED
+=====================
+
+1. Verified Existing Functionality
+   - Tested login flow - working correctly
+   - All previously implemented features still functional
+
+2. Feature #5: User is redirected to login when refresh token expires
+   - Added session expired toast notification to API client
+   - Implemented automatic redirect with URL preservation
+   - Fixed JWT exception handling bug (JWTError to InvalidTokenError)
+   - Created test endpoint for refresh token clearing
+   - All 8 test steps verified
+
+IMPLEMENTATION DETAILS
+=======================
+
+Frontend Changes (frontend/app/utils/api.ts):
+- Added showSessionExpiredToast() function
+- Updated apiClient() refresh failure handling
+- Toast displays before redirect with 1-second delay
+
+Backend Changes (backend/app/utils/auth.py):
+- Fixed JWT exception handling for PyJWT 2.10.1
+- Changed jwt.JWTError to jwt.InvalidTokenError
+
+Backend Changes (backend/app/routers/auth.py):
+- Added test endpoint POST /api/auth/test/clear-refresh-tokens
+
+FEATURE STATUS
+==============
+Total Features: 166
+Completed: 11
+Remaining: 155
+Progress: 6.6%
+
+---
+End of Session 10
