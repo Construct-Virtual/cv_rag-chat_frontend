@@ -260,7 +260,7 @@
       "Step 7: Clear search input",
       "Step 8: Verify all conversations reappear"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",

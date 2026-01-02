@@ -79,6 +79,7 @@ export default function ChatPage() {
   const [hoveredConvId, setHoveredConvId] = useState<string | null>(null);
   const [deleteConfirmConvId, setDeleteConfirmConvId] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
 
@@ -395,6 +396,11 @@ export default function ChatPage() {
     return null;
   }
 
+  // Filter conversations based on search query
+  const filteredConversations = conversations.filter((conv) =>
+    conv.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <div className="h-screen flex flex-col bg-[#0A0A0A] text-[#F5F5F5]">
       {/* Header */}
@@ -439,6 +445,41 @@ export default function ChatPage() {
           } transition-all duration-300 border-r border-[#2A2A2A] bg-[#1A1A1A] flex-shrink-0 overflow-hidden`}
         >
           <div className="h-full flex flex-col p-4">
+            {/* Search Input */}
+            <div className="mb-4">
+              <div className="relative">
+                <svg
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#737373]"
+                  width="16"
+                  height="16"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <circle cx="8" cy="8" r="6" />
+                  <path d="M14 14l4 4" />
+                </svg>
+                <input
+                  type="text"
+                  placeholder="Search conversations..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-[#2A2A2A] border border-[#3A3A3A] rounded-lg pl-10 pr-10 py-2 text-sm text-[#F5F5F5] placeholder-[#737373] focus:outline-none focus:border-[#3B82F6] transition-colors"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#737373] hover:text-[#F5F5F5] transition-colors"
+                    title="Clear search"
+                  >
+                    <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M3 3l8 8M11 3l-8 8" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+            </div>
+
             {/* New Chat Button */}
             <button
               onClick={createNewConversation}
@@ -450,14 +491,24 @@ export default function ChatPage() {
 
             {/* Conversations List */}
             <div className="flex-1 overflow-y-auto space-y-2">
-              {conversations.length === 0 ? (
+              {filteredConversations.length === 0 ? (
                 <div className="text-center text-[#737373] text-sm mt-4">
-                  No conversations yet.
-                  <br />
-                  Click "+ New Chat" to start.
+                  {searchQuery ? (
+                    <>
+                      No conversations match your search.
+                      <br />
+                      Try a different search term.
+                    </>
+                  ) : (
+                    <>
+                      No conversations yet.
+                      <br />
+                      Click "+ New Chat" to start.
+                    </>
+                  )}
                 </div>
               ) : (
-                conversations.map((conv) => (
+                filteredConversations.map((conv) => (
                   <div
                     key={conv.id}
                     onMouseEnter={() => setHoveredConvId(conv.id)}
