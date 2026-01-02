@@ -44,6 +44,8 @@ export default function ChatPage() {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState("");
   const [hoveredConvId, setHoveredConvId] = useState<string | null>(null);
+  const [deleteConfirmConvId, setDeleteConfirmConvId] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
 
@@ -300,6 +302,41 @@ export default function ChatPage() {
     }
   };
 
+  const deleteConversation = async (conversationId: string) => {
+    try {
+      const response = await apiDelete(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/chat/conversations/${conversationId}`
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to delete conversation");
+      }
+
+      // Remove from conversations list
+      setConversations(conversations.filter(conv => conv.id !== conversationId));
+
+      // If deleted conversation was current, clear it
+      if (currentConversation?.id === conversationId) {
+        setCurrentConversation(null);
+        setMessages([]);
+      }
+
+      // Close modal
+      setDeleteConfirmConvId(null);
+
+      // Show success toast
+      showToast("Conversation deleted successfully", "success");
+    } catch (err) {
+      console.error("Failed to delete conversation:", err);
+      showToast("Failed to delete conversation. Please try again.", "error");
+    }
+  };
+
+  const showToast = (message: string, type: "success" | "error") => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
   const handleLogout = async () => {
     try {
       await apiPost(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/logout`, {});
@@ -399,19 +436,33 @@ export default function ChatPage() {
                       </div>
                     </button>
                     {hoveredConvId === conv.id && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setCurrentConversation(conv);
-                          startEditingTitle();
-                        }}
-                        className="absolute right-2 top-2 p-1 rounded hover:bg-[#3A3A3A] transition-colors"
-                        title="Rename conversation"
-                      >
-                        <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M11 4L13 6L6 13H4V11L11 4Z" />
-                        </svg>
-                      </button>
+                      <div className="absolute right-2 top-2 flex gap-1">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setCurrentConversation(conv);
+                            startEditingTitle();
+                          }}
+                          className="p-1 rounded hover:bg-[#3A3A3A] transition-colors"
+                          title="Rename conversation"
+                        >
+                          <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M11 4L13 6L6 13H4V11L11 4Z" />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteConfirmConvId(conv.id);
+                          }}
+                          className="p-1 rounded hover:bg-[#EF4444] transition-colors"
+                          title="Delete conversation"
+                        >
+                          <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M3 6h12M8 6V4h2v2M5 6v10h8V6" />
+                          </svg>
+                        </button>
+                      </div>
                     )}
                   </div>
                 ))
@@ -595,6 +646,66 @@ export default function ChatPage() {
           )}
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmConvId && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold mb-2">Delete Conversation?</h3>
+            <p className="text-[#A1A1A1] text-sm mb-6">
+              This will permanently delete this conversation and all its messages. This action cannot be undone.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setDeleteConfirmConvId(null)}
+                className="px-4 py-2 bg-[#2A2A2A] hover:bg-[#3A3A3A] text-[#F5F5F5] rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => deleteConversation(deleteConfirmConvId)}
+                className="px-4 py-2 bg-[#EF4444] hover:bg-[#DC2626] text-white rounded-lg transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toast && (
+        <div className="fixed bottom-4 right-4 z-50 animate-slide-up">
+          <div
+            className={`rounded-lg px-4 py-3 shadow-lg ${
+              toast.type === "success"
+                ? "bg-[#10B981] text-white"
+                : "bg-[#EF4444] text-white"
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              {toast.type === "success" ? (
+                <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              ) : (
+                <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              )}
+              <span className="text-sm font-medium">{toast.message}</span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

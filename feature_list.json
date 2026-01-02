@@ -245,7 +245,7 @@
       "Step 9: Verify redirect to empty state or different conversation",
       "Step 10: Verify success toast notification"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
