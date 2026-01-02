@@ -93,6 +93,13 @@ async def logout(response: Response):
         raise HTTPException(status_code=500, detail=f"Logout failed: {str(e)}")
 
 
+@router.post("/test/clear-refresh-tokens")
+async def clear_refresh_tokens():
+    """Test endpoint to clear all refresh tokens"""
+    mock_db.refresh_tokens = []
+    return {"message": "All refresh tokens cleared"}
+
+
 @router.post("/refresh")
 async def refresh_token(request: Request, response: Response):
     """

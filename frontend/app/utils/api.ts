@@ -7,6 +7,29 @@ interface FetchOptions extends RequestInit {
 }
 
 /**
+ * Show a session expired toast notification
+ */
+function showSessionExpiredToast() {
+  // Create toast element
+  const toast = document.createElement('div');
+  toast.className = 'fixed bottom-4 right-4 bg-red-500 text-white px-6 py-4 rounded-lg shadow-lg flex items-center gap-3 animate-slide-up z-50';
+  toast.innerHTML = `
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+      <path d="M10 0C4.48 0 0 4.48 0 10C0 15.52 4.48 20 10 20C15.52 20 20 15.52 20 10C20 4.48 15.52 0 10 0ZM11 15H9V13H11V15ZM11 11H9V5H11V11Z" fill="currentColor"/>
+    </svg>
+    <span class="text-sm font-medium">Session expired. Please log in again.</span>
+  `;
+  document.body.appendChild(toast);
+
+  // Auto remove after redirect
+  setTimeout(() => {
+    if (document.body.contains(toast)) {
+      document.body.removeChild(toast);
+    }
+  }, 5000);
+}
+
+/**
  * Make an authenticated API call with automatic token refresh
  *
  * @param url - The API endpoint URL
@@ -58,9 +81,16 @@ export async function apiClient(url: string, options: FetchOptions = {}): Promis
     } else {
       // Refresh failed, redirect to login
       if (typeof window !== 'undefined') {
+        // Show session expired notification
+        showSessionExpiredToast();
+
         const currentPath = window.location.pathname;
         sessionStorage.clear();
-        window.location.href = `/login?redirect=${encodeURIComponent(currentPath)}`;
+
+        // Small delay to let the toast show before redirect
+        setTimeout(() => {
+          window.location.href = `/login?redirect=${encodeURIComponent(currentPath)}`;
+        }, 1000);
       }
     }
   }

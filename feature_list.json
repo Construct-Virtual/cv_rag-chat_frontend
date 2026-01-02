@@ -74,7 +74,7 @@
       "Step 7: Verify all tokens are cleared",
       "Step 8: Verify current URL is preserved for post-login redirect"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
