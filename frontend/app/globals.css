@@ -1,24 +1,14 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 @layer base {
-  :root {
-    --background: 10 10 10;
-    --foreground: 245 245 245;
-  }
-
-  .dark {
-    --background: 10 10 10;
-    --foreground: 245 245 245;
-  }
-
   * {
-    @apply border-border;
+    border-color: #2A2A2A;
   }
 
   body {
-    @apply bg-background-primary text-text-primary;
+    background-color: #0A0A0A;
+    color: #F5F5F5;
+    font-family: Inter, ui-sans-serif, system-ui;
   }
 
   /* Custom scrollbar */
@@ -28,15 +18,16 @@
   }
 
   ::-webkit-scrollbar-track {
-    @apply bg-background-secondary;
+    background-color: #1A1A1A;
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply bg-background-tertiary rounded-md;
+    background-color: #2A2A2A;
+    border-radius: 0.375rem;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-gray-700;
+    background-color: rgb(55 65 81);
   }
 }
 
