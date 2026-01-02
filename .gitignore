@@ -40,4 +40,6 @@ htmlcov/
 # Temporary files
 *.tmp
 *.temp
-claude-progress.txt
+
+# Keep claude-progress.txt for session tracking
+# claude-progress.txt
