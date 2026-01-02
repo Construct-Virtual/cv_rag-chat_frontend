@@ -96,6 +96,16 @@ class MockDatabase:
                 return rt.copy()
         return None
 
+    def verify_refresh_token(self, user_id: str, token: str) -> bool:
+        """Verify refresh token exists for user"""
+        for rt in self.refresh_tokens:
+            if rt["token"] == token and rt["user_id"] == user_id:
+                # Check if token is expired
+                expires_at = datetime.fromisoformat(rt["expires_at"])
+                if expires_at > datetime.utcnow():
+                    return True
+        return False
+
     def delete_refresh_token(self, token: str) -> None:
         """Delete refresh token"""
         self.refresh_tokens = [rt for rt in self.refresh_tokens if rt["token"] != token]

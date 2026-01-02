@@ -1,8 +1,8 @@
 """Authentication router"""
-from fastapi import APIRouter, HTTPException, Response, Depends
+from fastapi import APIRouter, HTTPException, Response, Depends, Request
 from datetime import datetime
 from app.models.auth import LoginRequest, TokenResponse, UserResponse
-from app.utils.auth import verify_password, create_access_token, create_refresh_token
+from app.utils.auth import verify_password, create_access_token, create_refresh_token, decode_token
 from app.utils.mock_database import mock_db
 from app.utils.dependencies import get_current_user
 
@@ -91,6 +91,63 @@ async def logout(response: Response):
         return {"message": "Successfully logged out"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Logout failed: {str(e)}")
+
+
+@router.post("/refresh")
+async def refresh_token(request: Request, response: Response):
+    """
+    Refresh access token using refresh token
+
+    - Reads refresh token from httpOnly cookie
+    - Validates refresh token
+    - Issues new access token
+    - Returns new access token
+    """
+    try:
+        # Get refresh token from cookie
+        refresh_token = request.cookies.get("refresh_token")
+
+        if not refresh_token:
+            raise HTTPException(status_code=401, detail="Refresh token not found")
+
+        # Decode and verify refresh token
+        payload = decode_token(refresh_token)
+
+        if not payload:
+            raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
+
+        # Verify it's a refresh token
+        if payload.get("type") != "refresh":
+            raise HTTPException(status_code=401, detail="Invalid token type")
+
+        # Get user ID from payload
+        user_id = payload.get("sub")
+
+        if not user_id:
+            raise HTTPException(status_code=401, detail="Invalid token payload")
+
+        # Verify refresh token exists in database
+        if not mock_db.verify_refresh_token(user_id, refresh_token):
+            raise HTTPException(status_code=401, detail="Refresh token not found or revoked")
+
+        # Get user from database
+        user = mock_db.find_user_by_id(user_id)
+
+        if not user:
+            raise HTTPException(status_code=401, detail="User not found")
+
+        # Create new access token
+        new_access_token = create_access_token(user["id"], user["username"], user["role"])
+
+        return {
+            "access_token": new_access_token,
+            "token_type": "bearer"
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Token refresh failed: {str(e)}")
 
 
 @router.get("/me", response_model=UserResponse)

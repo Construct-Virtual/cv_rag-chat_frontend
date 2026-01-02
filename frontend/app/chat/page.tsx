@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { apiGet, apiPost, apiPatch, apiDelete } from "../utils/api";
 
 interface User {
   id: string;
@@ -80,19 +81,9 @@ export default function ChatPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const getAuthHeaders = () => {
-    const token = sessionStorage.getItem("access_token");
-    return {
-      "Authorization": `Bearer ${token}`,
-      "Content-Type": "application/json"
-    };
-  };
-
   const loadConversations = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/chat/conversations`, {
-        headers: getAuthHeaders()
-      });
+      const response = await apiGet(`${process.env.NEXT_PUBLIC_API_URL}/api/chat/conversations`);
 
       if (!response.ok) {
         throw new Error("Failed to load conversations");
@@ -107,11 +98,8 @@ export default function ChatPage() {
 
   const loadMessages = async (conversationId: string) => {
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/chat/conversations/${conversationId}/messages`,
-        {
-          headers: getAuthHeaders()
-        }
+      const response = await apiGet(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/chat/conversations/${conversationId}/messages`
       );
 
       if (!response.ok) {
@@ -128,11 +116,7 @@ export default function ChatPage() {
   const createNewConversation = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/chat/conversations`, {
-        method: "POST",
-        headers: getAuthHeaders(),
-        body: JSON.stringify({})
-      });
+      const response = await apiPost(`${process.env.NEXT_PUBLIC_API_URL}/api/chat/conversations`, {});
 
       if (!response.ok) {
         throw new Error("Failed to create conversation");
@@ -188,13 +172,9 @@ export default function ChatPage() {
       // we'll use fetch with streaming instead
       eventSource.close();
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/chat/query`, {
-        method: "POST",
-        headers: getAuthHeaders(),
-        body: JSON.stringify({
-          conversation_id: currentConversation.id,
-          message: messageText
-        })
+      const response = await apiPost(`${process.env.NEXT_PUBLIC_API_URL}/api/chat/query`, {
+        conversation_id: currentConversation.id,
+        message: messageText
       });
 
       if (!response.ok) {
@@ -282,13 +262,9 @@ export default function ChatPage() {
     const newTitle = editedTitle.trim();
 
     try {
-      const response = await fetch(
+      const response = await apiPatch(
         `${process.env.NEXT_PUBLIC_API_URL}/api/chat/conversations/${currentConversation.id}`,
-        {
-          method: "PATCH",
-          headers: getAuthHeaders(),
-          body: JSON.stringify({ title: newTitle })
-        }
+        { title: newTitle }
       );
 
       if (!response.ok) {
@@ -326,10 +302,7 @@ export default function ChatPage() {
 
   const handleLogout = async () => {
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/logout`, {
-        method: "POST",
-        credentials: "include",
-      });
+      await apiPost(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/logout`, {});
     } catch (err) {
       console.error("Logout error:", err);
     }

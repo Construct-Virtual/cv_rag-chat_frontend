@@ -59,7 +59,7 @@
       "Step 7: Verify original API call is retried with new token",
       "Step 8: Verify operation completes successfully"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
