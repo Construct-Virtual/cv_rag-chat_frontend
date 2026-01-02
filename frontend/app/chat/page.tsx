@@ -22,6 +22,22 @@ export default function ChatPage() {
     }
   }, [router]);
 
+  const handleLogout = async () => {
+    try {
+      // Call logout API to invalidate tokens
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/logout`, {
+        method: "POST",
+        credentials: "include", // Important for httpOnly cookies
+      });
+    } catch (err) {
+      console.error("Logout API call failed:", err);
+      // Continue with logout even if API call fails
+    }
+    // Clear local storage
+    sessionStorage.clear();
+    router.push("/login");
+  };
+
   if (!user) {
     return (
       <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center">
@@ -45,10 +61,7 @@ export default function ChatPage() {
               {user.role}
             </div>
             <button
-              onClick={() => {
-                sessionStorage.clear();
-                router.push("/login");
-              }}
+              onClick={handleLogout}
               className="text-sm text-[#A1A1A1] hover:text-[#F5F5F5] transition-colors"
             >
               Logout

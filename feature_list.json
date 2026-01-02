@@ -28,7 +28,7 @@
       "Step 7: Verify no tokens are stored",
       "Step 8: Verify form remains on login page"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -44,7 +44,7 @@
       "Step 8: Verify tokens are cleared from storage",
       "Step 9: Verify cannot access /chat without re-authenticating"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
