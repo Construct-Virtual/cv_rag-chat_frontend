@@ -21,12 +21,25 @@ interface Conversation {
   message_count: number;
 }
 
+interface Source {
+  id: string;
+  number: number;
+  file_name: string;
+  display_name: string;
+  category: string;
+  page_number?: number;
+  chunk_index?: number;
+  similarity_score: number;
+  excerpt: string;
+}
+
 interface Message {
   id: string;
   conversation_id: string;
   role: "user" | "assistant";
   content: string;
   created_at: string;
+  sources?: Source[];
 }
 
 export default function ChatPage() {
@@ -41,6 +54,7 @@ export default function ChatPage() {
   const [isSending, setIsSending] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingContent, setStreamingContent] = useState("");
+  const [streamingSources, setStreamingSources] = useState<Source[]>([]);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState("");
   const [hoveredConvId, setHoveredConvId] = useState<string | null>(null);
@@ -215,10 +229,17 @@ export default function ChatPage() {
                 setStreamingContent("");
                 setIsStreaming(false);
 
+                // Store sources if available
+                if (data.sources && data.sources.length > 0) {
+                  setStreamingSources(data.sources);
+                }
+
                 // Reload messages to get the saved messages with IDs
                 await loadMessages(currentConversation.id);
                 // Reload conversations to update message count
                 await loadConversations();
+
+                // Keep sources visible (don't clear them)
               } else if (data.type === "error") {
                 console.error("Streaming error:", data.message);
                 setStreamingContent("");
@@ -581,6 +602,28 @@ export default function ChatPage() {
                           <div className="text-xs opacity-70 mb-1">AI Assistant</div>
                           <div className="text-sm whitespace-pre-wrap">{streamingContent}</div>
                           <div className="inline-block w-1 h-4 bg-[#3B82F6] animate-pulse ml-1"></div>
+
+                          {/* Display sources if available */}
+                          {streamingSources.length > 0 && (
+                            <div className="mt-4 pt-4 border-t border-[#2A2A2A]">
+                              <div className="text-xs font-semibold mb-2 opacity-70">Sources:</div>
+                              <div className="space-y-2">
+                                {streamingSources.map((source) => (
+                                  <div key={source.id} className="text-xs bg-[#252525] rounded p-2 border border-[#2A2A2A]">
+                                    <div className="font-medium text-[#3B82F6] mb-1">
+                                      [{source.number}] {source.display_name}
+                                    </div>
+                                    <div className="text-[#A3A3A3] text-[10px]">
+                                      {source.category} • Page {source.page_number || 'N/A'} • Score: {(source.similarity_score * 100).toFixed(0)}%
+                                    </div>
+                                    <div className="mt-1 text-[#D4D4D4] italic">
+                                      "{source.excerpt}"
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}
@@ -594,6 +637,30 @@ export default function ChatPage() {
                             <div className="w-2 h-2 bg-[#737373] rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></div>
                             <div className="w-2 h-2 bg-[#737373] rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></div>
                             <div className="w-2 h-2 bg-[#737373] rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Sources display after streaming completes */}
+                    {!isStreaming && streamingSources.length > 0 && (
+                      <div className="flex justify-start">
+                        <div className="max-w-[80%] rounded-lg px-4 py-3 bg-[#1A1A1A] text-[#F5F5F5] border border-[#2A2A2A]">
+                          <div className="text-xs font-semibold mb-2 opacity-70">Sources:</div>
+                          <div className="space-y-2">
+                            {streamingSources.map((source) => (
+                              <div key={source.id} className="text-xs bg-[#252525] rounded p-2 border border-[#2A2A2A]">
+                                <div className="font-medium text-[#3B82F6] mb-1">
+                                  [{source.number}] {source.display_name}
+                                </div>
+                                <div className="text-[#A3A3A3] text-[10px]">
+                                  {source.category} • Page {source.page_number || 'N/A'} • Score: {(source.similarity_score * 100).toFixed(0)}%
+                                </div>
+                                <div className="mt-1 text-[#D4D4D4] italic">
+                                  "{source.excerpt}"
+                                </div>
+                              </div>
+                            ))}
                           </div>
                         </div>
                       </div>

@@ -12,7 +12,6 @@ from app.models.chat import (
     QueryRequest
 )
 from app.utils.dependencies import get_current_user
-from app.utils.mock_rag import mock_rag_service
 from app.utils.mock_database import mock_db
 
 router = APIRouter()
@@ -241,14 +240,12 @@ async def chat_query(
     current_user: dict = Depends(get_current_user)
 ):
     """
-    Send a message and receive a streaming AI response with RAG
+    Send a message and receive a streaming AI response
 
     - Requires valid access token
     - Verifies user owns the conversation
     - Saves user message to database
-    - Performs RAG retrieval with role-based filtering
     - Streams AI response using Server-Sent Events (SSE)
-    - Includes source citations in response
     - Saves AI response to database when complete
     """
     try:
@@ -274,26 +271,8 @@ async def chat_query(
         # Define the streaming response generator
         async def generate_response():
             try:
-                # Step 1: Retrieve relevant documents using RAG
-                user_role = current_user["role"]
-                retrieved_docs = mock_rag_service.search_documents(
-                    query=query_data.message,
-                    user_role=user_role,
-                    top_k=3
-                )
-
-                # Step 2: Generate response using retrieved documents
-                ai_response = mock_rag_service.generate_response(
-                    query=query_data.message,
-                    retrieved_docs=retrieved_docs,
-                    user_role=user_role
-                )
-
-                # Step 3: Get source citations
-                citations = mock_rag_service.get_source_citations(retrieved_docs)
-
-                # Use ai_response instead of mock_response
-                mock_response = ai_response
+                # Mock AI response for now (before implementing RAG)
+                mock_response = f"I understand you're asking about: '{query_data.message}'. This is a mock response. In production, this would use RAG to search SOPs and provide relevant information based on your role ({current_user['role']})."
 
                 # Stream the response word by word
                 words = mock_response.split()
@@ -326,12 +305,11 @@ async def chat_query(
                 # Update conversation timestamp again
                 mock_db.update_conversation(query_data.conversation_id)
 
-                # Send completion event with citations
+                # Send completion event
                 completion_data = {
                     "type": "complete",
                     "message_id": assistant_message["id"],
-                    "full_content": full_response,
-                    "sources": citations
+                    "full_content": full_response
                 }
                 yield f"data: {json.dumps(completion_data)}\n\n"
 
