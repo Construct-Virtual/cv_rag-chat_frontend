@@ -117,7 +117,7 @@
       "Step 8: Verify empty state is displayed",
       "Step 9: Verify suggested prompts are shown"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
