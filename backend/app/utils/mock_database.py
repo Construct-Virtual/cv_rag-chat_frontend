@@ -159,6 +159,15 @@ class MockDatabase:
         """Get count of messages in a conversation"""
         return sum(1 for m in self.messages if m["conversation_id"] == conversation_id)
 
+    def get_last_message(self, conversation_id: str) -> Optional[Dict[str, Any]]:
+        """Get the most recent message in a conversation"""
+        conv_messages = [m for m in self.messages if m["conversation_id"] == conversation_id]
+        if not conv_messages:
+            return None
+        # Sort by created_at and return the last one
+        conv_messages.sort(key=lambda x: x["created_at"])
+        return conv_messages[-1].copy()
+
     # Message methods
     def create_message(self, conversation_id: str, role: str, content: str) -> Dict[str, Any]:
         """Create a new message"""

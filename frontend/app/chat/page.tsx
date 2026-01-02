@@ -4,6 +4,23 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { apiGet, apiPost, apiPatch, apiDelete } from "../utils/api";
 
+// Helper function to format relative time
+function formatRelativeTime(isoString: string): string {
+  const date = new Date(isoString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 1) return "Just now";
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+  if (diffDays < 30) return `${Math.floor(diffDays / 7)}w ago`;
+  return date.toLocaleDateString();
+}
+
 interface User {
   id: string;
   username: string;
@@ -19,6 +36,8 @@ interface Conversation {
   created_at: string;
   updated_at: string;
   message_count: number;
+  last_message_preview?: string;
+  last_message_at?: string;
 }
 
 interface Source {
@@ -451,10 +470,23 @@ export default function ChatPage() {
                           : "text-[#A1A1A1] hover:bg-[#2A2A2A] hover:text-[#F5F5F5]"
                       }`}
                     >
-                      <div className="text-sm font-medium truncate pr-8">{conv.title}</div>
-                      <div className="text-xs text-[#737373] mt-1">
-                        {conv.message_count} {conv.message_count === 1 ? "message" : "messages"}
+                      <div className="flex justify-between items-start mb-1">
+                        <div className="text-sm font-medium truncate pr-8">{conv.title}</div>
+                        {conv.last_message_at && (
+                          <div className="text-[10px] text-[#666666] whitespace-nowrap">
+                            {formatRelativeTime(conv.last_message_at)}
+                          </div>
+                        )}
                       </div>
+                      {conv.last_message_preview ? (
+                        <div className="text-xs text-[#737373] truncate pr-8">
+                          {conv.last_message_preview}
+                        </div>
+                      ) : (
+                        <div className="text-xs text-[#737373]">
+                          {conv.message_count} {conv.message_count === 1 ? "message" : "messages"}
+                        </div>
+                      )}
                     </button>
                     {hoveredConvId === conv.id && (
                       <div className="absolute right-2 top-2 flex gap-1">

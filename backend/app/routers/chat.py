@@ -57,21 +57,35 @@ async def get_conversations(current_user: dict = Depends(get_current_user)):
 
     - Requires valid access token
     - Returns list of conversations sorted by updated_at (newest first)
+    - Includes last message preview and timestamp
     """
     try:
         conversations = mock_db.find_conversations_by_user(current_user["id"])
 
-        return [
-            ConversationResponse(
+        result = []
+        for conv in conversations:
+            last_message = mock_db.get_last_message(conv["id"])
+
+            # Create preview from last message (truncate to 60 chars)
+            last_message_preview = None
+            last_message_at = None
+            if last_message:
+                content = last_message["content"]
+                last_message_preview = content[:60] + "..." if len(content) > 60 else content
+                last_message_at = last_message["created_at"]
+
+            result.append(ConversationResponse(
                 id=conv["id"],
                 user_id=conv["user_id"],
                 title=conv["title"],
                 created_at=conv["created_at"],
                 updated_at=conv["updated_at"],
-                message_count=mock_db.get_message_count(conv["id"])
-            )
-            for conv in conversations
-        ]
+                message_count=mock_db.get_message_count(conv["id"]),
+                last_message_preview=last_message_preview,
+                last_message_at=last_message_at
+            ))
+
+        return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get conversations: {str(e)}")
 

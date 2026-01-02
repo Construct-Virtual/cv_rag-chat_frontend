@@ -17,6 +17,8 @@ class ConversationResponse(BaseModel):
     created_at: str
     updated_at: str
     message_count: int = 0
+    last_message_preview: Optional[str] = None
+    last_message_at: Optional[str] = None
 
 
 class ConversationUpdate(BaseModel):
