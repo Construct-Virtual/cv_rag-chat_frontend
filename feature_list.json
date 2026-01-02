@@ -1,0 +1,2459 @@
+[
+  {
+    "category": "functional",
+    "description": "User can successfully log in with valid credentials and be redirected to chat interface",
+    "steps": [
+      "Step 1: Navigate to /login page",
+      "Step 2: Enter valid username in username field",
+      "Step 3: Enter valid password in password field",
+      "Step 4: Click 'Login' button",
+      "Step 5: Verify redirect to /chat page",
+      "Step 6: Verify JWT access token is stored in memory",
+      "Step 7: Verify refresh token is stored in httpOnly cookie",
+      "Step 8: Verify user info is displayed in header",
+      "Step 9: Verify user role is displayed in user menu"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Login fails with invalid credentials and displays appropriate error message",
+    "steps": [
+      "Step 1: Navigate to /login page",
+      "Step 2: Enter invalid username",
+      "Step 3: Enter invalid password",
+      "Step 4: Click 'Login' button",
+      "Step 5: Verify error message is displayed",
+      "Step 6: Verify user is not redirected",
+      "Step 7: Verify no tokens are stored",
+      "Step 8: Verify form remains on login page"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "User can successfully log out and tokens are invalidated",
+    "steps": [
+      "Step 1: Log in as valid user",
+      "Step 2: Navigate to /chat page",
+      "Step 3: Click user menu in header",
+      "Step 4: Click 'Logout' button",
+      "Step 5: Verify POST request to /api/auth/logout",
+      "Step 6: Verify refresh token is invalidated in database",
+      "Step 7: Verify redirect to /login page",
+      "Step 8: Verify tokens are cleared from storage",
+      "Step 9: Verify cannot access /chat without re-authenticating"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Access token automatically refreshes when expired during API call",
+    "steps": [
+      "Step 1: Log in with valid credentials",
+      "Step 2: Wait for access token to expire (or mock expiration)",
+      "Step 3: Make any authenticated API call",
+      "Step 4: Verify 401 response triggers refresh flow",
+      "Step 5: Verify POST request to /api/auth/refresh with refresh_token",
+      "Step 6: Verify new access_token is received",
+      "Step 7: Verify original API call is retried with new token",
+      "Step 8: Verify operation completes successfully"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "User is redirected to login when refresh token expires",
+    "steps": [
+      "Step 1: Log in with valid credentials",
+      "Step 2: Expire both access and refresh tokens",
+      "Step 3: Make any authenticated API call",
+      "Step 4: Verify refresh attempt fails",
+      "Step 5: Verify 'Session expired' toast notification appears",
+      "Step 6: Verify redirect to /login page",
+      "Step 7: Verify all tokens are cleared",
+      "Step 8: Verify current URL is preserved for post-login redirect"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Protected routes redirect unauthenticated users to login page",
+    "steps": [
+      "Step 1: Clear all authentication tokens",
+      "Step 2: Attempt to navigate to /chat",
+      "Step 3: Verify redirect to /login",
+      "Step 4: Verify error message about authentication required",
+      "Step 5: After login, verify redirect back to /chat"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "GET /api/auth/me returns current user information with role",
+    "steps": [
+      "Step 1: Log in as valid user",
+      "Step 2: Make GET request to /api/auth/me with Bearer token",
+      "Step 3: Verify response includes user id",
+      "Step 4: Verify response includes username",
+      "Step 5: Verify response includes full_name",
+      "Step 6: Verify response includes email",
+      "Step 7: Verify response includes role",
+      "Step 8: Verify response includes last_login timestamp"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "User can create a new conversation",
+    "steps": [
+      "Step 1: Log in as valid user",
+      "Step 2: Navigate to /chat page",
+      "Step 3: Click 'New Chat' button in sidebar",
+      "Step 4: Verify POST request to /api/chat/conversations",
+      "Step 5: Verify new conversation is created with default title",
+      "Step 6: Verify conversation appears in sidebar",
+      "Step 7: Verify UI navigates to new conversation view",
+      "Step 8: Verify empty state is displayed",
+      "Step 9: Verify suggested prompts are shown"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "User can send a message and receive streaming AI response",
+    "steps": [
+      "Step 1: Create or open a conversation",
+      "Step 2: Type a message in the input field",
+      "Step 3: Click Send button or press Enter",
+      "Step 4: Verify user message appears immediately in chat",
+      "Step 5: Verify typing indicator appears for assistant",
+      "Step 6: Verify SSE connection to POST /api/chat/query",
+      "Step 7: Verify response streams word-by-word",
+      "Step 8: Verify assistant message updates in real-time",
+      "Step 9: Verify typing indicator disappears when complete",
+      "Step 10: Verify complete message is saved to database",
+      "Step 11: Verify conversation updated_at timestamp updates"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "RAG pipeline retrieves relevant SOP content based on user query",
+    "steps": [
+      "Step 1: Log in as user with specific role",
+      "Step 2: Send a query about a topic covered in accessible SOPs",
+      "Step 3: Verify backend generates embedding for query",
+      "Step 4: Verify vector similarity search in documents table",
+      "Step 5: Verify permission filtering by user role",
+      "Step 6: Verify relevant chunks are retrieved",
+      "Step 7: Verify response includes information from SOPs",
+      "Step 8: Verify source citations are included",
+      "Step 9: Verify metadata includes file_name and chunk info"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "User is denied access to restricted SOPs based on role",
+    "steps": [
+      "Step 1: Log in as user with 'employee' role",
+      "Step 2: Query for content that is in HR-restricted SOP",
+      "Step 3: Verify backend filters embeddings by role",
+      "Step 4: Verify restricted documents are excluded from retrieval",
+      "Step 5: Verify response indicates no access to that information",
+      "Step 6: Verify message includes current user role",
+      "Step 7: Verify message suggests contacting administrator",
+      "Step 8: Verify access attempt is logged for security audit"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Source citations appear in assistant responses with document references",
+    "steps": [
+      "Step 1: Send a query that retrieves SOP content",
+      "Step 2: Wait for complete assistant response",
+      "Step 3: Verify source citation chips appear at bottom of message",
+      "Step 4: Verify each citation shows file_name",
+      "Step 5: Verify citations are expandable to show context",
+      "Step 6: Verify relevance scores are displayed",
+      "Step 7: Verify clicking citation highlights relevant content"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "User can view all their conversations in sidebar",
+    "steps": [
+      "Step 1: Log in as user with existing conversations",
+      "Step 2: Navigate to /chat page",
+      "Step 3: Verify GET request to /api/chat/conversations",
+      "Step 4: Verify all user's conversations appear in sidebar",
+      "Step 5: Verify conversations show title",
+      "Step 6: Verify conversations show last message preview",
+      "Step 7: Verify conversations show relative timestamp",
+      "Step 8: Verify conversations are grouped by time period",
+      "Step 9: Verify newest conversations appear first"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "User can switch between conversations by clicking in sidebar",
+    "steps": [
+      "Step 1: Log in with multiple existing conversations",
+      "Step 2: Click on a conversation in sidebar",
+      "Step 3: Verify GET request to /api/chat/conversations/:id",
+      "Step 4: Verify all messages for that conversation load",
+      "Step 5: Verify conversation title appears in header",
+      "Step 6: Verify messages display in chronological order",
+      "Step 7: Verify auto-scroll to latest message",
+      "Step 8: Verify conversation is highlighted in sidebar"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "User can rename a conversation",
+    "steps": [
+      "Step 1: Navigate to an existing conversation",
+      "Step 2: Hover over conversation in sidebar to show edit icon",
+      "Step 3: Click edit icon or click conversation title in header",
+      "Step 4: Enter new title in inline edit field",
+      "Step 5: Press Enter or click save",
+      "Step 6: Verify PUT request to /api/chat/conversations/:id",
+      "Step 7: Verify title updates in sidebar",
+      "Step 8: Verify title updates in header",
+      "Step 9: Verify success toast notification",
+      "Step 10: Verify updated_at timestamp changes"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "User can delete a conversation with confirmation",
+    "steps": [
+      "Step 1: Navigate to conversation to delete",
+      "Step 2: Hover over conversation in sidebar to show delete icon",
+      "Step 3: Click delete icon",
+      "Step 4: Verify confirmation modal appears",
+      "Step 5: Confirm deletion",
+      "Step 6: Verify DELETE request to /api/chat/conversations/:id",
+      "Step 7: Verify conversation removed from sidebar",
+      "Step 8: Verify all messages cascade deleted",
+      "Step 9: Verify redirect to empty state or different conversation",
+      "Step 10: Verify success toast notification"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "User can search/filter conversations in sidebar",
+    "steps": [
+      "Step 1: Log in with multiple conversations",
+      "Step 2: Click search input in sidebar",
+      "Step 3: Type search query",
+      "Step 4: Verify conversations filter in real-time",
+      "Step 5: Verify only matching titles are shown",
+      "Step 6: Verify search is case-insensitive",
+      "Step 7: Clear search input",
+      "Step 8: Verify all conversations reappear"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "User can share a conversation via unique link",
+    "steps": [
+      "Step 1: Navigate to conversation to share",
+      "Step 2: Click 'Share' button in conversation header",
+      "Step 3: Verify share modal opens",
+      "Step 4: Click confirm sharing",
+      "Step 5: Verify POST request to /api/chat/conversations/:id/share",
+      "Step 6: Verify unique share_token is generated",
+      "Step 7: Verify is_shared flag set to true",
+      "Step 8: Verify share URL is displayed in modal",
+      "Step 9: Click 'Copy Link' button",
+      "Step 10: Verify link copied to clipboard",
+      "Step 11: Verify success toast notification"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Shared conversation is accessible via public link without authentication",
+    "steps": [
+      "Step 1: Create and share a conversation",
+      "Step 2: Copy share URL",
+      "Step 3: Open new incognito browser window",
+      "Step 4: Navigate to shared URL /shared/:share_token",
+      "Step 5: Verify GET request to /api/chat/shared/:share_token",
+      "Step 6: Verify conversation loads without authentication",
+      "Step 7: Verify all messages are visible",
+      "Step 8: Verify 'Shared by [user]' banner is displayed",
+      "Step 9: Verify input field is disabled (read-only)",
+      "Step 10: Verify no edit or delete options available"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "User can disable sharing of a previously shared conversation",
+    "steps": [
+      "Step 1: Navigate to a shared conversation",
+      "Step 2: Click 'Share' button",
+      "Step 3: Click 'Disable Sharing' option",
+      "Step 4: Verify DELETE request to /api/chat/conversations/:id/share",
+      "Step 5: Verify is_shared flag set to false",
+      "Step 6: Verify share_token is cleared",
+      "Step 7: Verify shared link no longer works",
+      "Step 8: Verify 404 error when accessing old share URL",
+      "Step 9: Verify success toast notification"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "User can copy message content to clipboard",
+    "steps": [
+      "Step 1: Navigate to conversation with messages",
+      "Step 2: Hover over an assistant message",
+      "Step 3: Verify copy icon appears",
+      "Step 4: Click copy icon",
+      "Step 5: Verify message content copied to clipboard",
+      "Step 6: Verify success toast notification 'Copied to clipboard'",
+      "Step 7: Paste in another application",
+      "Step 8: Verify content matches original message"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "User can regenerate an assistant response",
+    "steps": [
+      "Step 1: Navigate to conversation with assistant messages",
+      "Step 2: Hover over last assistant message",
+      "Step 3: Verify regenerate icon appears",
+      "Step 4: Click regenerate icon",
+      "Step 5: Verify original message is removed",
+      "Step 6: Verify new SSE request to /api/chat/query",
+      "Step 7: Verify new response streams in",
+      "Step 8: Verify new message saved to database",
+      "Step 9: Verify old message is replaced"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Conversation history groups messages by time period (Today, Yesterday, etc.)",
+    "steps": [
+      "Step 1: Create conversations across different time periods",
+      "Step 2: Navigate to /chat page",
+      "Step 3: Verify conversations grouped by 'Today'",
+      "Step 4: Verify conversations grouped by 'Yesterday'",
+      "Step 5: Verify conversations grouped by 'Last 7 days'",
+      "Step 6: Verify conversations grouped by 'Older'",
+      "Step 7: Verify group headers are displayed",
+      "Step 8: Verify chronological order within groups"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Sidebar collapses and expands on toggle button click",
+    "steps": [
+      "Step 1: Navigate to /chat page",
+      "Step 2: Verify sidebar is visible",
+      "Step 3: Click sidebar toggle button",
+      "Step 4: Verify sidebar smoothly animates closed",
+      "Step 5: Verify main chat area expands to fill space",
+      "Step 6: Click toggle button again",
+      "Step 7: Verify sidebar smoothly animates open",
+      "Step 8: Verify main chat area returns to normal width"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Database schema includes all required tables with correct structure",
+    "steps": [
+      "Step 1: Connect to Supabase database",
+      "Step 2: Verify 'users' table exists with all columns",
+      "Step 3: Verify 'documents' table exists with embedding vector column",
+      "Step 4: Verify 'sop_permissions' table exists",
+      "Step 5: Verify 'conversations' table exists",
+      "Step 6: Verify 'messages' table exists",
+      "Step 7: Verify 'refresh_tokens' table exists",
+      "Step 8: Verify foreign key constraints are created",
+      "Step 9: Verify indexes are created for performance"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "pgvector extension is enabled and working in database",
+    "steps": [
+      "Step 1: Connect to Supabase database",
+      "Step 2: Run query to check pgvector extension",
+      "Step 3: Verify extension is installed",
+      "Step 4: Create test vector embedding",
+      "Step 5: Perform vector similarity search",
+      "Step 6: Verify results return with cosine similarity scores",
+      "Step 7: Verify ivfflat index is working"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Documents table supports text-embedding-3-large dimensions (3072)",
+    "steps": [
+      "Step 1: Check documents table schema",
+      "Step 2: Verify embedding column is VECTOR(3072)",
+      "Step 3: Insert test document with 3072-dimension embedding",
+      "Step 4: Verify insertion succeeds",
+      "Step 5: Query document by similarity",
+      "Step 6: Verify vector operations work correctly"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Row Level Security (RLS) is enabled on conversations table",
+    "steps": [
+      "Step 1: Check conversations table RLS status",
+      "Step 2: Verify RLS is enabled",
+      "Step 3: Create RLS policy for user's own conversations",
+      "Step 4: Test as User A trying to access User B's conversation",
+      "Step 5: Verify access is denied",
+      "Step 6: Test User A accessing their own conversation",
+      "Step 7: Verify access is granted"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Messages cascade delete when parent conversation is deleted",
+    "steps": [
+      "Step 1: Create conversation with multiple messages",
+      "Step 2: Note conversation_id and message IDs",
+      "Step 3: Delete conversation via DELETE /api/chat/conversations/:id",
+      "Step 4: Query messages table for those message IDs",
+      "Step 5: Verify all messages are deleted",
+      "Step 6: Verify cascade delete worked correctly"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "sop_permissions table correctly defines role-based access",
+    "steps": [
+      "Step 1: Query sop_permissions table",
+      "Step 2: Verify public SOPs have is_public = true",
+      "Step 3: Verify restricted SOPs have allowed_roles array",
+      "Step 4: Verify file_name matches documents metadata",
+      "Step 5: Create test permission with specific roles",
+      "Step 6: Verify permission filtering logic works",
+      "Step 7: Verify default access (no permission entry) = public"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "FastAPI backend starts successfully on port 8000",
+    "steps": [
+      "Step 1: Navigate to backend directory",
+      "Step 2: Install dependencies from requirements.txt",
+      "Step 3: Set environment variables",
+      "Step 4: Run uvicorn app.main:app --host 0.0.0.0 --port 8000",
+      "Step 5: Verify server starts without errors",
+      "Step 6: Navigate to http://localhost:8000",
+      "Step 7: Verify server responds",
+      "Step 8: Check http://localhost:8000/docs for Swagger UI"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Health check endpoint returns healthy status",
+    "steps": [
+      "Step 1: Start backend server",
+      "Step 2: Make GET request to /api/health",
+      "Step 3: Verify 200 status code",
+      "Step 4: Verify response includes 'status': 'healthy'",
+      "Step 5: Verify response includes version number"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Database health check endpoint verifies connection",
+    "steps": [
+      "Step 1: Start backend server",
+      "Step 2: Make GET request to /api/health/db",
+      "Step 3: Verify 200 status code",
+      "Step 4: Verify response includes database status",
+      "Step 5: Verify successful connection to Supabase",
+      "Step 6: Test with disconnected database",
+      "Step 7: Verify appropriate error response"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "CORS is properly configured for frontend domain",
+    "steps": [
+      "Step 1: Start backend server",
+      "Step 2: Make request from frontend origin",
+      "Step 3: Verify CORS headers in response",
+      "Step 4: Verify Access-Control-Allow-Origin includes frontend URL",
+      "Step 5: Verify Access-Control-Allow-Methods includes required methods",
+      "Step 6: Verify credentials are allowed",
+      "Step 7: Test preflight OPTIONS request"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "JWT token creation and verification works correctly",
+    "steps": [
+      "Step 1: Call create_access_token() with user data",
+      "Step 2: Verify JWT token is returned",
+      "Step 3: Decode token and verify claims",
+      "Step 4: Verify expiration time is set correctly",
+      "Step 5: Call verify_token() with valid token",
+      "Step 6: Verify token passes validation",
+      "Step 7: Test with expired token",
+      "Step 8: Verify expired token is rejected",
+      "Step 9: Test with invalid signature",
+      "Step 10: Verify invalid token is rejected"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "get_current_user dependency extracts user from JWT",
+    "steps": [
+      "Step 1: Create valid JWT for test user",
+      "Step 2: Make request with Authorization: Bearer {token}",
+      "Step 3: Verify get_current_user() extracts user_id",
+      "Step 4: Verify user role is extracted",
+      "Step 5: Verify user object is returned",
+      "Step 6: Test with missing token",
+      "Step 7: Verify 401 error is raised",
+      "Step 8: Test with invalid token",
+      "Step 9: Verify 401 error is raised"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Password hashing uses bcrypt securely",
+    "steps": [
+      "Step 1: Hash a test password using bcrypt",
+      "Step 2: Verify hash is generated",
+      "Step 3: Verify hash is different from original password",
+      "Step 4: Verify same password produces different hash (salt)",
+      "Step 5: Verify password verification works",
+      "Step 6: Verify incorrect password fails verification"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Refresh tokens are stored and validated in database",
+    "steps": [
+      "Step 1: User logs in successfully",
+      "Step 2: Verify refresh token saved to refresh_tokens table",
+      "Step 3: Verify token is associated with user_id",
+      "Step 4: Verify expires_at is set correctly",
+      "Step 5: Make refresh request with valid token",
+      "Step 6: Verify token is found in database",
+      "Step 7: Verify new access token is generated",
+      "Step 8: Test with non-existent token",
+      "Step 9: Verify refresh fails with appropriate error"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Logout invalidates refresh token in database",
+    "steps": [
+      "Step 1: User logs in and obtains tokens",
+      "Step 2: Verify refresh token exists in database",
+      "Step 3: Call POST /api/auth/logout",
+      "Step 4: Verify refresh token is deleted from database",
+      "Step 5: Attempt to use deleted refresh token",
+      "Step 6: Verify refresh fails",
+      "Step 7: Verify appropriate error message"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "OpenAI embeddings API generates 3072-dimension vectors",
+    "steps": [
+      "Step 1: Initialize OpenAI embeddings client",
+      "Step 2: Generate embedding for test text",
+      "Step 3: Verify embedding is returned",
+      "Step 4: Verify embedding is array/list",
+      "Step 5: Verify embedding has exactly 3072 dimensions",
+      "Step 6: Verify values are floats",
+      "Step 7: Verify model used is text-embedding-3-large"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "LangChain RAG chain retrieves and augments context correctly",
+    "steps": [
+      "Step 1: Initialize LangChain with OpenAI",
+      "Step 2: Create test query",
+      "Step 3: Generate query embedding",
+      "Step 4: Perform vector similarity search",
+      "Step 5: Retrieve top-k relevant chunks",
+      "Step 6: Build context from chunks",
+      "Step 7: Create prompt with context",
+      "Step 8: Generate LLM response",
+      "Step 9: Verify response includes information from context",
+      "Step 10: Verify source tracking works"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "get_accessible_files function returns correct files for user role",
+    "steps": [
+      "Step 1: Call get_accessible_files('employee')",
+      "Step 2: Verify returns all public SOPs",
+      "Step 3: Verify excludes restricted SOPs",
+      "Step 4: Call get_accessible_files('hr')",
+      "Step 5: Verify includes HR-specific SOPs",
+      "Step 6: Call get_accessible_files('admin')",
+      "Step 7: Verify includes all SOPs",
+      "Step 8: Verify function queries sop_permissions table",
+      "Step 9: Verify caching works for repeated calls"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Vector search filters by accessible files before retrieval",
+    "steps": [
+      "Step 1: Log in as user with 'employee' role",
+      "Step 2: Get accessible files for employee",
+      "Step 3: Perform vector search with query",
+      "Step 4: Verify WHERE clause includes file_name filter",
+      "Step 5: Verify only accessible files are in results",
+      "Step 6: Verify restricted files are excluded",
+      "Step 7: Check actual SQL query includes metadata filter",
+      "Step 8: Verify no post-retrieval filtering needed"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "SSE streaming endpoint sends chunks in real-time",
+    "steps": [
+      "Step 1: Open SSE connection to POST /api/chat/query",
+      "Step 2: Send test query in request body",
+      "Step 3: Verify Content-Type: text/event-stream header",
+      "Step 4: Verify chunks arrive progressively",
+      "Step 5: Verify each chunk formatted as 'data: {json}'",
+      "Step 6: Verify chunks contain response text",
+      "Step 7: Verify final chunk includes sources",
+      "Step 8: Verify connection closes when complete",
+      "Step 9: Verify total response matches saved message"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Streaming handles errors gracefully and closes connection",
+    "steps": [
+      "Step 1: Start SSE streaming request",
+      "Step 2: Simulate error during streaming (e.g., LLM timeout)",
+      "Step 3: Verify error event is sent via SSE",
+      "Step 4: Verify connection closes properly",
+      "Step 5: Verify partial message is not saved",
+      "Step 6: Verify error is logged",
+      "Step 7: Test network interruption during stream",
+      "Step 8: Verify frontend handles disconnect"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Complete message with sources is saved to database after streaming",
+    "steps": [
+      "Step 1: Send query via streaming endpoint",
+      "Step 2: Wait for streaming to complete",
+      "Step 3: Query messages table for the message",
+      "Step 4: Verify complete message content is saved",
+      "Step 5: Verify sources JSONB includes all citations",
+      "Step 6: Verify token_count is calculated",
+      "Step 7: Verify created_at timestamp is set",
+      "Step 8: Verify conversation_id is correct"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Conversation list pagination works with limit and offset",
+    "steps": [
+      "Step 1: Create 30 test conversations",
+      "Step 2: Request GET /api/chat/conversations?limit=10&offset=0",
+      "Step 3: Verify 10 conversations returned",
+      "Step 4: Verify newest conversations first",
+      "Step 5: Request with offset=10",
+      "Step 6: Verify next 10 conversations",
+      "Step 7: Verify no duplicate conversations",
+      "Step 8: Request with offset=20",
+      "Step 9: Verify final 10 conversations"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Conversation includes last message preview in list",
+    "steps": [
+      "Step 1: Create conversation with multiple messages",
+      "Step 2: Request GET /api/chat/conversations",
+      "Step 3: Verify response includes last message content",
+      "Step 4: Verify preview is truncated if long",
+      "Step 5: Verify timestamp is from last message",
+      "Step 6: Send new message to conversation",
+      "Step 7: Request conversations again",
+      "Step 8: Verify last message preview updated"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "User can only access their own conversations (authorization)",
+    "steps": [
+      "Step 1: Create conversation as User A",
+      "Step 2: Note conversation_id",
+      "Step 3: Log in as User B",
+      "Step 4: Attempt GET /api/chat/conversations/{User A conversation_id}",
+      "Step 5: Verify 403 Forbidden response",
+      "Step 6: Verify User B cannot access User A's conversation",
+      "Step 7: Verify error message is appropriate"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Conversation updated_at timestamp updates on new message",
+    "steps": [
+      "Step 1: Create conversation",
+      "Step 2: Note initial updated_at timestamp",
+      "Step 3: Wait 5 seconds",
+      "Step 4: Send new message to conversation",
+      "Step 5: Query conversation from database",
+      "Step 6: Verify updated_at is newer than initial",
+      "Step 7: Verify conversation moves to top of list"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Empty query handling returns appropriate message",
+    "steps": [
+      "Step 1: Send empty string query",
+      "Step 2: Verify validation error",
+      "Step 3: Verify helpful error message",
+      "Step 4: Send whitespace-only query",
+      "Step 5: Verify validation error",
+      "Step 6: Verify no LLM call is made",
+      "Step 7: Verify no message saved to database"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "No relevant documents found scenario is handled gracefully",
+    "steps": [
+      "Step 1: Send query about topic not in any SOP",
+      "Step 2: Verify vector search returns no results",
+      "Step 3: Verify LLM receives empty context",
+      "Step 4: Verify response indicates no information available",
+      "Step 5: Verify helpful message is displayed",
+      "Step 6: Verify no error is thrown",
+      "Step 7: Verify message is saved with sources: []"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Query reformulation improves retrieval for unclear queries",
+    "steps": [
+      "Step 1: Send ambiguous or unclear query",
+      "Step 2: Verify query understanding step",
+      "Step 3: Verify query is reformulated for better matching",
+      "Step 4: Verify reformulated query used for embedding",
+      "Step 5: Verify better retrieval results",
+      "Step 6: Verify response addresses original intent"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Context augmentation includes relevant metadata in LLM prompt",
+    "steps": [
+      "Step 1: Retrieve chunks from vector search",
+      "Step 2: Verify chunks include metadata (file_name, page_number, etc.)",
+      "Step 3: Build LLM prompt with context",
+      "Step 4: Verify prompt includes document names",
+      "Step 5: Verify prompt includes instructions to cite sources",
+      "Step 6: Generate response",
+      "Step 7: Verify response references source documents appropriately"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Very long messages are handled correctly (character limits)",
+    "steps": [
+      "Step 1: Compose message longer than reasonable limit (e.g., 5000 chars)",
+      "Step 2: Attempt to send message",
+      "Step 3: Verify validation catches oversized message",
+      "Step 4: Verify helpful error message about character limit",
+      "Step 5: Verify message is not sent",
+      "Step 6: Test with message just under limit",
+      "Step 7: Verify message is accepted and sent"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Special characters in queries are properly escaped and handled",
+    "steps": [
+      "Step 1: Send query with special SQL characters (', \", ;)",
+      "Step 2: Verify no SQL injection occurs",
+      "Step 3: Verify query is processed correctly",
+      "Step 4: Send query with Unicode characters",
+      "Step 5: Verify Unicode is handled properly",
+      "Step 6: Send query with HTML/JavaScript",
+      "Step 7: Verify XSS prevention works",
+      "Step 8: Verify sanitized output"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Rapid successive messages are queued and processed in order",
+    "steps": [
+      "Step 1: Send first message",
+      "Step 2: Immediately send second message before first completes",
+      "Step 3: Send third message",
+      "Step 4: Verify messages are queued",
+      "Step 5: Verify first message completes",
+      "Step 6: Verify second message then processes",
+      "Step 7: Verify third message then processes",
+      "Step 8: Verify all messages saved in correct order"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Browser refresh during streaming doesn't corrupt conversation state",
+    "steps": [
+      "Step 1: Start sending a message with streaming response",
+      "Step 2: During streaming, refresh the browser",
+      "Step 3: Verify page reloads",
+      "Step 4: Verify conversation loads from database",
+      "Step 5: Verify partial/incomplete message is not displayed",
+      "Step 6: Verify conversation state is consistent",
+      "Step 7: Verify user can continue chatting normally"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Next.js frontend starts successfully on port 3000",
+    "steps": [
+      "Step 1: Navigate to frontend directory",
+      "Step 2: Install dependencies with pnpm install",
+      "Step 3: Set environment variables",
+      "Step 4: Run pnpm dev",
+      "Step 5: Verify server starts without errors",
+      "Step 6: Navigate to http://localhost:3000",
+      "Step 7: Verify page loads",
+      "Step 8: Verify no console errors"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Tailwind CSS 4.0 is properly configured and working",
+    "steps": [
+      "Step 1: Check tailwind.config file exists",
+      "Step 2: Verify Tailwind CSS is imported",
+      "Step 3: Create element with Tailwind classes",
+      "Step 4: Verify styles are applied",
+      "Step 5: Test dark mode classes",
+      "Step 6: Verify custom colors from design system work",
+      "Step 7: Test responsive breakpoints"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Zustand store manages global state correctly",
+    "steps": [
+      "Step 1: Create Zustand store for auth state",
+      "Step 2: Update user in store",
+      "Step 3: Verify state updates across components",
+      "Step 4: Create store for conversation state",
+      "Step 5: Test state persistence",
+      "Step 6: Verify store actions work correctly",
+      "Step 7: Test store reset on logout"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "API client wrapper handles authentication headers automatically",
+    "steps": [
+      "Step 1: Create API client with base URL",
+      "Step 2: Make authenticated request",
+      "Step 3: Verify Authorization header is added automatically",
+      "Step 4: Verify Bearer token is included",
+      "Step 5: Test request interceptor",
+      "Step 6: Test response interceptor",
+      "Step 7: Verify error handling"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "TypeScript types are defined for all API responses",
+    "steps": [
+      "Step 1: Check types directory exists",
+      "Step 2: Verify User type is defined",
+      "Step 3: Verify Conversation type is defined",
+      "Step 4: Verify Message type is defined",
+      "Step 5: Verify API response types are defined",
+      "Step 6: Test type checking in IDE",
+      "Step 7: Verify no 'any' types in API calls"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "AuthContext provides authentication state to entire app",
+    "steps": [
+      "Step 1: Verify AuthProvider wraps app",
+      "Step 2: Use useAuth hook in component",
+      "Step 3: Verify user state is accessible",
+      "Step 4: Verify login function works",
+      "Step 5: Verify logout function works",
+      "Step 6: Verify token refresh function works",
+      "Step 7: Test state persistence across page navigation"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "ProtectedRoute component prevents unauthorized access",
+    "steps": [
+      "Step 1: Create ProtectedRoute wrapper",
+      "Step 2: Wrap protected page with ProtectedRoute",
+      "Step 3: Access page without authentication",
+      "Step 4: Verify redirect to /login",
+      "Step 5: Log in successfully",
+      "Step 6: Verify redirect back to protected page",
+      "Step 7: Verify access is granted"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Message markdown rendering displays code blocks correctly",
+    "steps": [
+      "Step 1: Send query that results in code in response",
+      "Step 2: Verify code block is formatted with syntax highlighting",
+      "Step 3: Verify monospace font is used",
+      "Step 4: Verify copy button appears for code blocks",
+      "Step 5: Test markdown headers",
+      "Step 6: Test markdown lists",
+      "Step 7: Test inline code formatting"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "MessageList auto-scrolls to bottom when new message arrives",
+    "steps": [
+      "Step 1: Open conversation with many messages",
+      "Step 2: Verify scrolled to bottom initially",
+      "Step 3: Send new message",
+      "Step 4: Verify smooth auto-scroll to bottom",
+      "Step 5: Manually scroll up in conversation",
+      "Step 6: Send new message",
+      "Step 7: Verify auto-scroll still works",
+      "Step 8: Verify no jarring jumps"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Typing indicator appears during AI response generation",
+    "steps": [
+      "Step 1: Send message to AI",
+      "Step 2: Verify typing indicator appears immediately",
+      "Step 3: Verify animated dots are displayed",
+      "Step 4: Verify indicator has correct styling",
+      "Step 5: When streaming starts, verify indicator remains",
+      "Step 6: When streaming completes, verify indicator disappears",
+      "Step 7: Verify smooth transition"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Empty state displays when conversation has no messages",
+    "steps": [
+      "Step 1: Create new conversation",
+      "Step 2: Verify empty state component displays",
+      "Step 3: Verify welcome message is shown",
+      "Step 4: Verify suggested prompts are displayed",
+      "Step 5: Click a suggested prompt",
+      "Step 6: Verify message is sent",
+      "Step 7: Verify empty state disappears"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Suggested prompts help users start conversations",
+    "steps": [
+      "Step 1: Open new conversation",
+      "Step 2: Verify 3-5 suggested prompts appear",
+      "Step 3: Verify prompts are relevant to SOP content",
+      "Step 4: Click a suggestion",
+      "Step 5: Verify text populates input field",
+      "Step 6: Verify message is sent automatically or requires click",
+      "Step 7: Verify suggestions disappear after first message"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "ChatInput textarea auto-expands up to max height",
+    "steps": [
+      "Step 1: Focus on chat input field",
+      "Step 2: Type single line of text",
+      "Step 3: Verify input height is single line",
+      "Step 4: Press Enter without Shift",
+      "Step 5: Verify message sends (not new line)",
+      "Step 6: Type multi-line text with Shift+Enter",
+      "Step 7: Verify textarea expands vertically",
+      "Step 8: Verify expansion stops at max height (5 lines)",
+      "Step 9: Verify scrollbar appears if exceeded"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Send button is disabled when input is empty",
+    "steps": [
+      "Step 1: Focus on empty chat input",
+      "Step 2: Verify Send button is disabled/grayed",
+      "Step 3: Type one character",
+      "Step 4: Verify Send button becomes enabled",
+      "Step 5: Delete all text",
+      "Step 6: Verify Send button becomes disabled again",
+      "Step 7: Type whitespace only",
+      "Step 8: Verify Send button remains disabled"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Enter key sends message, Shift+Enter creates new line",
+    "steps": [
+      "Step 1: Type message in input",
+      "Step 2: Press Enter key",
+      "Step 3: Verify message is sent",
+      "Step 4: Type new message",
+      "Step 5: Press Shift+Enter",
+      "Step 6: Verify new line is created",
+      "Step 7: Verify message is NOT sent",
+      "Step 8: Press Enter",
+      "Step 9: Verify multi-line message is sent"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "SSE client handles connection errors and retries",
+    "steps": [
+      "Step 1: Start SSE connection",
+      "Step 2: Simulate network error",
+      "Step 3: Verify error is caught",
+      "Step 4: Verify error message is displayed to user",
+      "Step 5: Verify retry logic kicks in",
+      "Step 6: Verify connection is re-established",
+      "Step 7: Test max retry limit",
+      "Step 8: Verify graceful failure after max retries"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "useChatStream hook manages streaming state correctly",
+    "steps": [
+      "Step 1: Initialize useChatStream hook",
+      "Step 2: Verify initial state is idle",
+      "Step 3: Start streaming",
+      "Step 4: Verify state changes to 'streaming'",
+      "Step 5: Verify chunks are accumulated",
+      "Step 6: Verify state updates trigger re-renders",
+      "Step 7: Complete streaming",
+      "Step 8: Verify state changes to 'complete'",
+      "Step 9: Verify cleanup on unmount"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Optimistic UI updates show user message immediately",
+    "steps": [
+      "Step 1: Type and send message",
+      "Step 2: Verify message appears in chat instantly",
+      "Step 3: Verify message has 'sending' state",
+      "Step 4: Wait for server response",
+      "Step 5: Verify message state changes to 'sent'",
+      "Step 6: If error occurs, verify message shows error state",
+      "Step 7: Verify user can retry failed message"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Message timestamps display on hover",
+    "steps": [
+      "Step 1: Display messages in conversation",
+      "Step 2: Hover over a message",
+      "Step 3: Verify timestamp tooltip appears",
+      "Step 4: Verify timestamp format is readable (e.g., '2:45 PM')",
+      "Step 5: Verify timestamp is positioned correctly",
+      "Step 6: Move mouse away",
+      "Step 7: Verify tooltip disappears"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "User messages align right with blue background",
+    "steps": [
+      "Step 1: Send a message as user",
+      "Step 2: Verify message appears on right side",
+      "Step 3: Verify background is blue (#2563EB)",
+      "Step 4: Verify text is white",
+      "Step 5: Verify border radius creates speech bubble effect",
+      "Step 6: Verify max-width is 80%",
+      "Step 7: Verify padding is applied correctly"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Assistant messages align left with dark gray background",
+    "steps": [
+      "Step 1: Receive assistant response",
+      "Step 2: Verify message appears on left side",
+      "Step 3: Verify background is dark gray (#1F2937)",
+      "Step 4: Verify text is light gray/white",
+      "Step 5: Verify border radius creates speech bubble effect",
+      "Step 6: Verify max-width is 80%",
+      "Step 7: Verify source citations appear below message"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Source citation chips are expandable to show context",
+    "steps": [
+      "Step 1: Receive message with source citations",
+      "Step 2: Verify citation chips appear",
+      "Step 3: Verify chip shows file name",
+      "Step 4: Click citation chip",
+      "Step 5: Verify expanded view shows chunk context",
+      "Step 6: Verify relevance score is displayed",
+      "Step 7: Click again to collapse",
+      "Step 8: Verify smooth expand/collapse animation"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Conversation title is editable inline from header",
+    "steps": [
+      "Step 1: Open a conversation",
+      "Step 2: Click on title in conversation header",
+      "Step 3: Verify title becomes editable input",
+      "Step 4: Type new title",
+      "Step 5: Press Enter or click outside",
+      "Step 6: Verify PUT request to update title",
+      "Step 7: Verify title updates in header",
+      "Step 8: Verify title updates in sidebar",
+      "Step 9: Verify success toast notification"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Share button in header opens share modal",
+    "steps": [
+      "Step 1: Navigate to a conversation",
+      "Step 2: Verify Share button is visible in header",
+      "Step 3: Click Share button",
+      "Step 4: Verify modal opens",
+      "Step 5: Verify modal explains sharing functionality",
+      "Step 6: Verify Confirm and Cancel buttons",
+      "Step 7: Click Cancel",
+      "Step 8: Verify modal closes without sharing"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Settings dropdown in header provides conversation actions",
+    "steps": [
+      "Step 1: Navigate to a conversation",
+      "Step 2: Click settings/menu button in header",
+      "Step 3: Verify dropdown opens",
+      "Step 4: Verify 'Rename' option is available",
+      "Step 5: Verify 'Delete' option is available",
+      "Step 6: Verify 'Export' option is available",
+      "Step 7: Click outside dropdown",
+      "Step 8: Verify dropdown closes"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Delete message confirmation modal prevents accidental deletion",
+    "steps": [
+      "Step 1: Hover over a message",
+      "Step 2: Click delete icon",
+      "Step 3: Verify confirmation modal appears",
+      "Step 4: Verify modal explains deletion is permanent",
+      "Step 5: Click Cancel",
+      "Step 6: Verify modal closes and message remains",
+      "Step 7: Click delete again",
+      "Step 8: Click Confirm",
+      "Step 9: Verify message is deleted",
+      "Step 10: Verify success toast notification"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Toast notifications appear for user actions",
+    "steps": [
+      "Step 1: Perform action that triggers notification (e.g., copy message)",
+      "Step 2: Verify toast appears in top-right corner",
+      "Step 3: Verify toast has appropriate icon",
+      "Step 4: Verify toast message is clear",
+      "Step 5: Verify toast auto-dismisses after 3-5 seconds",
+      "Step 6: Verify user can manually dismiss toast",
+      "Step 7: Test error toast styling",
+      "Step 8: Test success toast styling"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Error boundary catches and displays component errors",
+    "steps": [
+      "Step 1: Trigger a component error (e.g., undefined access)",
+      "Step 2: Verify error boundary catches error",
+      "Step 3: Verify fallback UI is displayed",
+      "Step 4: Verify error is logged to console",
+      "Step 5: Verify user sees helpful error message",
+      "Step 6: Verify option to reload page",
+      "Step 7: Verify rest of app continues working"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Network errors display user-friendly messages",
+    "steps": [
+      "Step 1: Disconnect from network",
+      "Step 2: Attempt to send a message",
+      "Step 3: Verify error is caught",
+      "Step 4: Verify toast notification with network error message",
+      "Step 5: Verify message is not marked as sent",
+      "Step 6: Reconnect to network",
+      "Step 7: Verify retry functionality works"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "API 5xx errors are handled with retry logic",
+    "steps": [
+      "Step 1: Simulate 500 Internal Server Error",
+      "Step 2: Verify error is caught by API client",
+      "Step 3: Verify automatic retry after delay",
+      "Step 4: Verify exponential backoff",
+      "Step 5: Verify max retry attempts",
+      "Step 6: After max retries, verify error message to user",
+      "Step 7: Verify user can manually retry"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Permission denied shows helpful message with user role",
+    "steps": [
+      "Step 1: Log in as employee user",
+      "Step 2: Query for HR-restricted content",
+      "Step 3: Verify assistant response indicates no access",
+      "Step 4: Verify message includes 'Your current role: employee'",
+      "Step 5: Verify message suggests contacting administrator",
+      "Step 6: Verify no actual restricted content is leaked",
+      "Step 7: Verify appropriate styling for system message"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Loading skeleton appears while conversations are loading",
+    "steps": [
+      "Step 1: Navigate to /chat page",
+      "Step 2: Before conversations load, verify skeleton placeholders",
+      "Step 3: Verify skeleton matches conversation item layout",
+      "Step 4: Verify pulsing animation",
+      "Step 5: When data loads, verify smooth transition",
+      "Step 6: Verify skeletons are replaced with actual conversations"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Loading spinner appears during button actions",
+    "steps": [
+      "Step 1: Click action button (e.g., Delete conversation)",
+      "Step 2: Verify button becomes disabled",
+      "Step 3: Verify spinner icon appears in button",
+      "Step 4: Verify button text changes to 'Deleting...'",
+      "Step 5: When action completes, verify spinner disappears",
+      "Step 6: Verify button returns to normal state",
+      "Step 7: Verify success or error feedback"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Theme toggle switches between dark and light mode",
+    "steps": [
+      "Step 1: Verify app starts in dark mode",
+      "Step 2: Click theme toggle in header",
+      "Step 3: Verify smooth transition to light mode",
+      "Step 4: Verify all colors update correctly",
+      "Step 5: Verify user preference is saved",
+      "Step 6: Refresh page",
+      "Step 7: Verify theme preference persists",
+      "Step 8: Toggle back to dark mode",
+      "Step 9: Verify smooth transition"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "User profile dropdown shows user info and logout option",
+    "steps": [
+      "Step 1: Click user avatar/name in header",
+      "Step 2: Verify dropdown menu opens",
+      "Step 3: Verify user full name is displayed",
+      "Step 4: Verify user role is displayed",
+      "Step 5: Verify email is displayed (if available)",
+      "Step 6: Verify Settings option",
+      "Step 7: Verify Logout option",
+      "Step 8: Click Logout",
+      "Step 9: Verify logout flow triggers"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Search bar in header filters conversations globally",
+    "steps": [
+      "Step 1: Create conversations with distinct titles",
+      "Step 2: Click search bar in header",
+      "Step 3: Type search term",
+      "Step 4: Verify matching conversations are highlighted",
+      "Step 5: Verify non-matching conversations are hidden or dimmed",
+      "Step 6: Clear search",
+      "Step 7: Verify all conversations reappear",
+      "Step 8: Test search with partial matches"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "App branding/logo in header links to home/main chat",
+    "steps": [
+      "Step 1: Navigate to any page in app",
+      "Step 2: Verify logo/branding is visible in header",
+      "Step 3: Click logo",
+      "Step 4: Verify navigation to main chat page",
+      "Step 5: Verify current conversation is cleared",
+      "Step 6: Verify new chat state or conversation list"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Header has correct height (64px) with dark background",
+    "steps": [
+      "Step 1: Navigate to /chat page",
+      "Step 2: Inspect header element",
+      "Step 3: Verify height is exactly 64px",
+      "Step 4: Verify background color is dark (#0A0A0A or #1A1A1A)",
+      "Step 5: Verify subtle border-bottom is present",
+      "Step 6: Verify header is fixed at top",
+      "Step 7: Verify z-index is appropriate"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Sidebar width is 300px and collapsible",
+    "steps": [
+      "Step 1: Measure sidebar width",
+      "Step 2: Verify width is 300px when expanded",
+      "Step 3: Click collapse button",
+      "Step 4: Verify width becomes 0px or hidden",
+      "Step 5: Verify smooth animation during collapse",
+      "Step 6: Verify main content area expands to fill space"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Three-column layout on desktop with proper spacing",
+    "steps": [
+      "Step 1: View on desktop viewport (1920x1080)",
+      "Step 2: Verify left sidebar is visible (300px)",
+      "Step 3: Verify main chat area takes remaining space",
+      "Step 4: Verify optional right panel can be shown (300px)",
+      "Step 5: Verify proper gaps between columns",
+      "Step 6: Verify no horizontal scrolling"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Design matches constructvirtual.com aesthetic (dark, professional, B2B)",
+    "steps": [
+      "Step 1: Compare with constructvirtual.com screenshots",
+      "Step 2: Verify deep black backgrounds (#0A0A0A)",
+      "Step 3: Verify elevated surfaces use #1A1A1A",
+      "Step 4: Verify blue accent color (#3B82F6) for CTAs",
+      "Step 5: Verify clean, minimal design",
+      "Step 6: Verify professional typography",
+      "Step 7: Verify no playful/consumer-style elements"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Color palette matches specification exactly",
+    "steps": [
+      "Step 1: Verify Background Primary is #0A0A0A",
+      "Step 2: Verify Background Secondary is #1A1A1A",
+      "Step 3: Verify Background Tertiary is #2A2A2A",
+      "Step 4: Verify Accent Primary is #3B82F6",
+      "Step 5: Verify Accent Secondary is #8B5CF6",
+      "Step 6: Verify Text Primary is #F5F5F5",
+      "Step 7: Verify Text Secondary is #A1A1A1",
+      "Step 8: Verify Border color is #2A2A2A",
+      "Step 9: Verify User Message background is #2563EB",
+      "Step 10: Verify Assistant Message background is #1F2937"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Typography uses Inter font with correct weights and sizes",
+    "steps": [
+      "Step 1: Verify Inter font is loaded",
+      "Step 2: Verify fallback fonts include system fonts",
+      "Step 3: Verify H1 is text-3xl (30px) font-semibold",
+      "Step 4: Verify H2 is text-2xl (24px) font-semibold",
+      "Step 5: Verify H3 is text-xl (20px) font-semibold",
+      "Step 6: Verify body text is text-base (16px) font-normal",
+      "Step 7: Verify message text is text-[15px] leading-7",
+      "Step 8: Verify small text is text-sm (14px)",
+      "Step 9: Verify code uses JetBrains Mono or Fira Code"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Spacing follows 4px base unit consistently",
+    "steps": [
+      "Step 1: Measure padding on various components",
+      "Step 2: Verify all padding is multiple of 4px",
+      "Step 3: Verify container padding is px-6 (24px)",
+      "Step 4: Verify component gaps are gap-4 (16px)",
+      "Step 5: Verify section spacing is space-y-8 (32px)",
+      "Step 6: Verify message spacing is space-y-4 (16px)"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Primary buttons have correct styling with hover states",
+    "steps": [
+      "Step 1: Inspect primary button (e.g., 'New Chat')",
+      "Step 2: Verify background is bg-blue-600",
+      "Step 3: Verify text is white and font-medium",
+      "Step 4: Verify rounded-lg border radius",
+      "Step 5: Verify padding is px-4 py-2",
+      "Step 6: Hover over button",
+      "Step 7: Verify background changes to bg-blue-700",
+      "Step 8: Verify transition-colors duration-200",
+      "Step 9: Verify smooth animation"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Secondary buttons have border and appropriate hover state",
+    "steps": [
+      "Step 1: Find secondary button",
+      "Step 2: Verify border border-gray-700",
+      "Step 3: Verify text is text-gray-300",
+      "Step 4: Verify rounded-lg",
+      "Step 5: Verify padding px-4 py-2",
+      "Step 6: Hover over button",
+      "Step 7: Verify background changes to bg-gray-800",
+      "Step 8: Verify text color lightens on hover"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Input fields have correct dark styling with focus states",
+    "steps": [
+      "Step 1: Inspect input field (e.g., chat input)",
+      "Step 2: Verify background is bg-gray-900",
+      "Step 3: Verify border is border-gray-800",
+      "Step 4: Verify text is white",
+      "Step 5: Verify placeholder is text-gray-500",
+      "Step 6: Verify rounded-lg",
+      "Step 7: Focus on input",
+      "Step 8: Verify border changes to border-blue-500",
+      "Step 9: Verify focus:ring-2 ring-blue-500/50 appears"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Cards have elevated appearance with borders and shadows",
+    "steps": [
+      "Step 1: Find card component (e.g., conversation item)",
+      "Step 2: Verify background is bg-gray-900",
+      "Step 3: Verify border is border-gray-800",
+      "Step 4: Verify rounded-xl border radius",
+      "Step 5: Verify padding is p-6",
+      "Step 6: Hover over card",
+      "Step 7: Verify border lightens to border-gray-700",
+      "Step 8: Verify shadow-lg on elevated cards"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Message bubbles have speech bubble styling with rounded corners",
+    "steps": [
+      "Step 1: View user message",
+      "Step 2: Verify rounded-2xl with rounded-tr-sm (cut corner)",
+      "Step 3: Verify max-w-[80%] constraint",
+      "Step 4: Verify padding px-4 py-3",
+      "Step 5: View assistant message",
+      "Step 6: Verify rounded-2xl with rounded-tl-sm (cut corner)",
+      "Step 7: Verify consistent padding",
+      "Step 8: Verify proper alignment"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Source citation chips have pill shape with subtle background",
+    "steps": [
+      "Step 1: View message with source citations",
+      "Step 2: Verify inline-flex items-center",
+      "Step 3: Verify bg-gray-700 background",
+      "Step 4: Verify text-gray-300 text color",
+      "Step 5: Verify text-xs font size",
+      "Step 6: Verify rounded-full shape",
+      "Step 7: Verify padding px-2 py-1",
+      "Step 8: Verify gap between icon and text"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Sidebar items highlight on hover and show active state",
+    "steps": [
+      "Step 1: Hover over conversation in sidebar",
+      "Step 2: Verify background changes to bg-gray-800",
+      "Step 3: Verify text changes to white",
+      "Step 4: Click conversation to make it active",
+      "Step 5: Verify active state has bg-gray-800",
+      "Step 6: Verify border-l-2 border-blue-500 indicator",
+      "Step 7: Verify smooth transitions"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Animations are smooth with appropriate durations",
+    "steps": [
+      "Step 1: Test sidebar collapse/expand animation",
+      "Step 2: Verify transition-all duration-200 ease-in-out",
+      "Step 3: Test message fade-in animation",
+      "Step 4: Verify messages fade in from bottom",
+      "Step 5: Test modal entrance animation",
+      "Step 6: Verify fade-in with scale-95 to scale-100",
+      "Step 7: Test page transitions",
+      "Step 8: Verify no janky animations"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Skeleton loaders match component layouts with pulse animation",
+    "steps": [
+      "Step 1: View skeleton for conversation list",
+      "Step 2: Verify skeleton matches actual item dimensions",
+      "Step 3: Verify animate-pulse class",
+      "Step 4: Verify background-gray-800 color",
+      "Step 5: View message skeleton",
+      "Step 6: Verify matches message bubble layout",
+      "Step 7: Verify smooth transition when data loads"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Typing indicator has bouncing dot animation",
+    "steps": [
+      "Step 1: Trigger typing indicator",
+      "Step 2: Verify three dots are displayed",
+      "Step 3: Verify dots have staggered bounce animation",
+      "Step 4: Verify gray background matches message styling",
+      "Step 5: Verify animation is smooth and continuous",
+      "Step 6: Verify proper positioning in message area"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Toast notifications slide in from top-right corner",
+    "steps": [
+      "Step 1: Trigger toast notification",
+      "Step 2: Verify toast appears in top-right corner",
+      "Step 3: Verify slide-in animation from right",
+      "Step 4: Verify toast has appropriate background color based on type",
+      "Step 5: Verify icon matches notification type",
+      "Step 6: Verify readable text with contrast",
+      "Step 7: Verify auto-dismiss animation",
+      "Step 8: Verify smooth slide-out"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Modal overlays have backdrop blur and centered content",
+    "steps": [
+      "Step 1: Open any modal",
+      "Step 2: Verify backdrop overlay covers entire screen",
+      "Step 3: Verify backdrop has dark semi-transparent background",
+      "Step 4: Verify backdrop-blur effect",
+      "Step 5: Verify modal content is centered",
+      "Step 6: Verify modal has elevated styling (shadow)",
+      "Step 7: Verify entrance animation (fade + scale)",
+      "Step 8: Close modal",
+      "Step 9: Verify exit animation"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Responsive layout works on mobile (< 768px)",
+    "steps": [
+      "Step 1: Resize viewport to 375px width (mobile)",
+      "Step 2: Verify sidebar is hidden by default",
+      "Step 3: Verify hamburger menu button appears",
+      "Step 4: Click menu button",
+      "Step 5: Verify sidebar slides in as overlay",
+      "Step 6: Verify backdrop appears behind sidebar",
+      "Step 7: Verify swipe gesture closes sidebar",
+      "Step 8: Verify chat area is full width",
+      "Step 9: Verify header adapts to mobile layout"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Responsive layout works on tablet (768px - 1024px)",
+    "steps": [
+      "Step 1: Resize viewport to 768px width (tablet)",
+      "Step 2: Verify sidebar can be toggled",
+      "Step 3: Verify sidebar becomes overlay instead of column",
+      "Step 4: Verify chat area expands when sidebar hidden",
+      "Step 5: Verify touch interactions work smoothly",
+      "Step 6: Verify no horizontal scrolling",
+      "Step 7: Verify proper spacing and readability"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Desktop layout shows all columns properly (> 1024px)",
+    "steps": [
+      "Step 1: Resize viewport to 1920px width (desktop)",
+      "Step 2: Verify sidebar is visible (300px)",
+      "Step 3: Verify main chat area takes center space",
+      "Step 4: Verify optional right panel can be shown",
+      "Step 5: Verify proper spacing between columns",
+      "Step 6: Verify content is centered and not edge-to-edge",
+      "Step 7: Verify comfortable reading width"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Light theme colors are applied correctly when toggled",
+    "steps": [
+      "Step 1: Toggle to light mode",
+      "Step 2: Verify background changes to #FFFFFF",
+      "Step 3: Verify secondary background is #F9FAFB",
+      "Step 4: Verify tertiary background is #F3F4F6",
+      "Step 5: Verify text primary is #111827",
+      "Step 6: Verify text secondary is #6B7280",
+      "Step 7: Verify border color is #E5E7EB",
+      "Step 8: Verify sufficient contrast for accessibility",
+      "Step 9: Verify smooth color transition"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Code blocks have syntax highlighting and monospace font",
+    "steps": [
+      "Step 1: Display message with code block",
+      "Step 2: Verify monospace font (JetBrains Mono or Fira Code)",
+      "Step 3: Verify syntax highlighting for code language",
+      "Step 4: Verify dark background for code block",
+      "Step 5: Verify proper padding and margin",
+      "Step 6: Verify copy button in top-right of code block",
+      "Step 7: Verify horizontal scroll if code is wide"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Loading states are visually distinct and indicate progress",
+    "steps": [
+      "Step 1: Trigger loading state (e.g., loading conversations)",
+      "Step 2: Verify skeleton loader or spinner is shown",
+      "Step 3: Verify loading indicator is appropriately sized",
+      "Step 4: Verify animation communicates ongoing process",
+      "Step 5: Verify loading state doesn't block entire UI unnecessarily",
+      "Step 6: When loaded, verify smooth transition to content"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Error states have red accent color with clear icons",
+    "steps": [
+      "Step 1: Trigger error state",
+      "Step 2: Verify error message uses #EF4444 red color",
+      "Step 3: Verify error icon is displayed",
+      "Step 4: Verify error text is readable",
+      "Step 5: Verify sufficient contrast",
+      "Step 6: Verify error doesn't blend with normal UI",
+      "Step 7: Verify helpful error message"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Success states have green accent color with checkmark",
+    "steps": [
+      "Step 1: Trigger success state (e.g., message sent)",
+      "Step 2: Verify success uses #10B981 green color",
+      "Step 3: Verify checkmark or success icon",
+      "Step 4: Verify brief appearance (toast or indicator)",
+      "Step 5: Verify doesn't interfere with user workflow"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Focus states are visible for keyboard navigation",
+    "steps": [
+      "Step 1: Tab through interactive elements",
+      "Step 2: Verify visible focus ring on each element",
+      "Step 3: Verify focus ring uses blue accent color",
+      "Step 4: Verify focus ring has sufficient contrast",
+      "Step 5: Verify tab order is logical",
+      "Step 6: Verify no focus traps",
+      "Step 7: Verify custom components handle focus correctly"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Hover states are subtle and consistent across UI",
+    "steps": [
+      "Step 1: Hover over various interactive elements",
+      "Step 2: Verify buttons lighten or darken consistently",
+      "Step 3: Verify transition-colors duration-200",
+      "Step 4: Verify cursor changes to pointer",
+      "Step 5: Verify hover states don't cause layout shifts",
+      "Step 6: Verify disabled elements don't show hover state"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Icons are consistent size and style throughout app",
+    "steps": [
+      "Step 1: Audit icons across different pages",
+      "Step 2: Verify icons are from same icon set (e.g., Lucide)",
+      "Step 3: Verify consistent sizing (e.g., 20px for UI icons)",
+      "Step 4: Verify consistent stroke width",
+      "Step 5: Verify proper alignment with text",
+      "Step 6: Verify appropriate spacing around icons"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Scrollbars are styled to match dark theme",
+    "steps": [
+      "Step 1: View scrollable area (e.g., message list)",
+      "Step 2: Verify custom scrollbar styling",
+      "Step 3: Verify scrollbar track is dark gray",
+      "Step 4: Verify scrollbar thumb is lighter gray",
+      "Step 5: Verify hover state on scrollbar",
+      "Step 6: Verify smooth scrolling behavior"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "No layout shifts occur during loading transitions",
+    "steps": [
+      "Step 1: Load page and observe layout",
+      "Step 2: Verify skeleton loaders match final layout dimensions",
+      "Step 3: Verify images have width/height attributes",
+      "Step 4: Verify fonts load without FOIT/FOUT",
+      "Step 5: Measure Cumulative Layout Shift (CLS)",
+      "Step 6: Verify CLS score is < 0.1",
+      "Step 7: Verify smooth content swaps"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Text readability is optimized with proper line height and contrast",
+    "steps": [
+      "Step 1: Read message text in chat",
+      "Step 2: Verify line-height is leading-7 (1.75) for message text",
+      "Step 3: Verify sufficient contrast (WCAG AA minimum)",
+      "Step 4: Verify text is not too wide (max-width for readability)",
+      "Step 5: Verify font size is readable (15-16px for body)",
+      "Step 6: Verify no text is cut off or truncated unexpectedly"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Visual hierarchy is clear with headings, spacing, and color",
+    "steps": [
+      "Step 1: Scan page visually",
+      "Step 2: Verify headings are clearly larger and bolder",
+      "Step 3: Verify primary actions are more prominent (blue)",
+      "Step 4: Verify secondary actions are subtler",
+      "Step 5: Verify proper use of white space",
+      "Step 6: Verify eye naturally flows to important elements",
+      "Step 7: Verify grouping of related elements"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Initial database migration creates all tables successfully",
+    "steps": [
+      "Step 1: Create fresh Supabase database",
+      "Step 2: Run initial migration SQL script",
+      "Step 3: Verify users table created",
+      "Step 4: Verify documents table created with vector column",
+      "Step 5: Verify sop_permissions table created",
+      "Step 6: Verify conversations table created",
+      "Step 7: Verify messages table created",
+      "Step 8: Verify refresh_tokens table created",
+      "Step 9: Verify all foreign keys created",
+      "Step 10: Verify all indexes created",
+      "Step 11: Verify no errors in migration"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Initial admin user can be created via database seeding",
+    "steps": [
+      "Step 1: Run seed script to create admin user",
+      "Step 2: Verify user inserted into users table",
+      "Step 3: Verify password is bcrypt hashed",
+      "Step 4: Verify role is set to 'admin'",
+      "Step 5: Verify is_active is true",
+      "Step 6: Log in with seeded admin credentials",
+      "Step 7: Verify login succeeds",
+      "Step 8: Verify admin role is returned in JWT"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Sample SOPs can be seeded into sop_permissions table",
+    "steps": [
+      "Step 1: Run seed script for SOP permissions",
+      "Step 2: Verify public SOPs are created with is_public = true",
+      "Step 3: Verify restricted SOPs have allowed_roles array",
+      "Step 4: Verify file_names match existing documents",
+      "Step 5: Verify display_name and description are populated",
+      "Step 6: Verify categories are assigned",
+      "Step 7: Query permissions to verify data integrity"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Vector embeddings can be inserted and queried successfully",
+    "steps": [
+      "Step 1: Generate sample embedding (3072 dimensions)",
+      "Step 2: Insert document with embedding into documents table",
+      "Step 3: Verify insertion succeeds",
+      "Step 4: Perform vector similarity search",
+      "Step 5: Verify search returns results with similarity scores",
+      "Step 6: Verify results are ordered by similarity",
+      "Step 7: Verify metadata is included in results"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Environment variables are loaded correctly in backend",
+    "steps": [
+      "Step 1: Create .env file with all required variables",
+      "Step 2: Start backend server",
+      "Step 3: Verify SUPABASE_URL is loaded",
+      "Step 4: Verify SUPABASE_SERVICE_ROLE_KEY is loaded",
+      "Step 5: Verify OPENAI_API_KEY is loaded",
+      "Step 6: Verify JWT_SECRET_KEY is loaded",
+      "Step 7: Verify no sensitive values are logged",
+      "Step 8: Test with missing variable",
+      "Step 9: Verify appropriate error on startup"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Environment variables are loaded correctly in frontend",
+    "steps": [
+      "Step 1: Create .env.local file",
+      "Step 2: Set NEXT_PUBLIC_SUPABASE_URL",
+      "Step 3: Set NEXT_PUBLIC_SUPABASE_ANON_KEY",
+      "Step 4: Set NEXT_PUBLIC_API_URL",
+      "Step 5: Start frontend dev server",
+      "Step 6: Verify variables are accessible via process.env",
+      "Step 7: Verify API calls use correct URL",
+      "Step 8: Verify Supabase client initializes correctly"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Backend deployment to Render works successfully",
+    "steps": [
+      "Step 1: Create Render account and new Web Service",
+      "Step 2: Connect GitHub repository",
+      "Step 3: Configure build command: pip install -r requirements.txt",
+      "Step 4: Configure start command: uvicorn app.main:app --host 0.0.0.0 --port 8000",
+      "Step 5: Add all environment variables",
+      "Step 6: Trigger deployment",
+      "Step 7: Verify build succeeds",
+      "Step 8: Verify service starts",
+      "Step 9: Test health check endpoint",
+      "Step 10: Verify auto-deploy on git push works"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Frontend deployment to Vercel works successfully",
+    "steps": [
+      "Step 1: Connect GitHub repository to Vercel",
+      "Step 2: Verify Next.js framework is detected",
+      "Step 3: Configure environment variables",
+      "Step 4: Set NEXT_PUBLIC_API_URL to Render backend URL",
+      "Step 5: Trigger deployment",
+      "Step 6: Verify build succeeds",
+      "Step 7: Verify deployment is live",
+      "Step 8: Test accessing deployed app",
+      "Step 9: Verify API calls work to backend",
+      "Step 10: Verify preview deployments for PRs work"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Production CORS allows Vercel frontend to access Render backend",
+    "steps": [
+      "Step 1: Deploy backend to Render",
+      "Step 2: Deploy frontend to Vercel",
+      "Step 3: Configure CORS to allow Vercel domain",
+      "Step 4: Access frontend from Vercel URL",
+      "Step 5: Make API call to backend",
+      "Step 6: Verify CORS headers allow request",
+      "Step 7: Verify request succeeds",
+      "Step 8: Test from different origin",
+      "Step 9: Verify request is blocked"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "GET /api/sops returns list of SOPs accessible to user's role",
+    "steps": [
+      "Step 1: Log in as employee user",
+      "Step 2: Make GET request to /api/sops",
+      "Step 3: Verify 200 response",
+      "Step 4: Verify list includes public SOPs",
+      "Step 5: Verify list excludes restricted SOPs",
+      "Step 6: Log in as HR user",
+      "Step 7: Make same request",
+      "Step 8: Verify list includes HR-specific SOPs",
+      "Step 9: Verify response includes display_name and description"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "GET /api/sops/:file_name/permissions returns permission details",
+    "steps": [
+      "Step 1: Choose a specific SOP file_name",
+      "Step 2: Make GET request to /api/sops/{file_name}/permissions",
+      "Step 3: Verify 200 response",
+      "Step 4: Verify response includes is_public flag",
+      "Step 5: Verify response includes allowed_roles array",
+      "Step 6: Verify response includes display_name",
+      "Step 7: Verify response includes description",
+      "Step 8: Test with non-existent file_name",
+      "Step 9: Verify 404 response"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Conversation export generates downloadable file",
+    "steps": [
+      "Step 1: Navigate to conversation with messages",
+      "Step 2: Click Export option in settings dropdown",
+      "Step 3: Verify export format options (PDF, Text)",
+      "Step 4: Choose export format",
+      "Step 5: Verify file download starts",
+      "Step 6: Open downloaded file",
+      "Step 7: Verify conversation title is included",
+      "Step 8: Verify all messages are included",
+      "Step 9: Verify timestamps are included",
+      "Step 10: Verify formatting is readable"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Database connection pooling prevents connection exhaustion",
+    "steps": [
+      "Step 1: Configure connection pooling in Supabase client",
+      "Step 2: Make 100 concurrent API requests",
+      "Step 3: Verify all requests succeed",
+      "Step 4: Monitor database connections",
+      "Step 5: Verify connections are reused from pool",
+      "Step 6: Verify max connections not exceeded",
+      "Step 7: Verify connections are released after use"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Query result caching improves performance for repeated queries",
+    "steps": [
+      "Step 1: Enable query result caching (5-minute TTL)",
+      "Step 2: Make query for SOP content",
+      "Step 3: Note response time",
+      "Step 4: Make identical query within 5 minutes",
+      "Step 5: Verify response is faster (from cache)",
+      "Step 6: Verify response content is identical",
+      "Step 7: Wait for cache expiration",
+      "Step 8: Make query again",
+      "Step 9: Verify fresh retrieval from database"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Rate limiting prevents brute force login attempts",
+    "steps": [
+      "Step 1: Configure rate limiting on /api/auth/login",
+      "Step 2: Make 10 failed login attempts rapidly",
+      "Step 3: Verify 11th attempt is rate limited",
+      "Step 4: Verify 429 Too Many Requests response",
+      "Step 5: Verify helpful error message",
+      "Step 6: Wait for rate limit window to expire",
+      "Step 7: Verify login attempts work again"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Logging captures important security events",
+    "steps": [
+      "Step 1: Attempt failed login",
+      "Step 2: Verify event is logged with timestamp and IP",
+      "Step 3: Access restricted SOP without permission",
+      "Step 4: Verify access denial is logged",
+      "Step 5: Create conversation",
+      "Step 6: Verify action is logged",
+      "Step 7: Review logs",
+      "Step 8: Verify sensitive data (passwords) is not logged"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "XSS prevention sanitizes user inputs",
+    "steps": [
+      "Step 1: Attempt to send message with <script> tag",
+      "Step 2: Verify script is sanitized",
+      "Step 3: Verify message displays as text, not executed",
+      "Step 4: Test conversation title with HTML",
+      "Step 5: Verify HTML is escaped",
+      "Step 6: Test various XSS attack vectors",
+      "Step 7: Verify all are prevented"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "SQL injection prevention through parameterized queries",
+    "steps": [
+      "Step 1: Attempt SQL injection in login username",
+      "Step 2: Verify query uses parameterized statements",
+      "Step 3: Verify injection attempt fails safely",
+      "Step 4: Test injection in search queries",
+      "Step 5: Verify no SQL execution",
+      "Step 6: Review all database queries",
+      "Step 7: Verify all use parameterization"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "HTTPS is enforced in production",
+    "steps": [
+      "Step 1: Access production app via HTTP",
+      "Step 2: Verify redirect to HTTPS",
+      "Step 3: Verify SSL certificate is valid",
+      "Step 4: Verify secure connection",
+      "Step 5: Verify cookies have Secure flag",
+      "Step 6: Verify no mixed content warnings"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Accessibility: All interactive elements are keyboard accessible",
+    "steps": [
+      "Step 1: Use keyboard only (no mouse)",
+      "Step 2: Tab through all interactive elements",
+      "Step 3: Verify logical tab order",
+      "Step 4: Test button activation with Enter/Space",
+      "Step 5: Test form submission with Enter",
+      "Step 6: Test modal close with Escape",
+      "Step 7: Verify no keyboard traps",
+      "Step 8: Verify focus is managed correctly"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Accessibility: ARIA labels are present on all icons and buttons",
+    "steps": [
+      "Step 1: Inspect icon buttons",
+      "Step 2: Verify aria-label or aria-labelledby",
+      "Step 3: Test with screen reader",
+      "Step 4: Verify meaningful labels are announced",
+      "Step 5: Verify interactive elements have roles",
+      "Step 6: Verify form inputs have labels",
+      "Step 7: Verify no unlabeled interactive elements"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Accessibility: Color contrast meets WCAG AA standards",
+    "steps": [
+      "Step 1: Use contrast checker tool",
+      "Step 2: Test text on background primary",
+      "Step 3: Verify contrast ratio >= 4.5:1 for normal text",
+      "Step 4: Verify contrast ratio >= 3:1 for large text",
+      "Step 5: Test button text contrast",
+      "Step 6: Test link contrast",
+      "Step 7: Test error message contrast",
+      "Step 8: Verify all combinations meet standards"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Accessibility: Screen reader announces dynamic content updates",
+    "steps": [
+      "Step 1: Enable screen reader (NVDA, JAWS, VoiceOver)",
+      "Step 2: Send a message",
+      "Step 3: Verify screen reader announces new message",
+      "Step 4: Verify aria-live region for streaming responses",
+      "Step 5: Test toast notifications",
+      "Step 6: Verify notifications are announced",
+      "Step 7: Test error states",
+      "Step 8: Verify errors are announced"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Performance: Initial page load LCP < 2 seconds",
+    "steps": [
+      "Step 1: Open Chrome DevTools Performance tab",
+      "Step 2: Record page load",
+      "Step 3: Measure Largest Contentful Paint (LCP)",
+      "Step 4: Verify LCP < 2 seconds",
+      "Step 5: Test on 3G network throttling",
+      "Step 6: Verify acceptable performance",
+      "Step 7: Use Lighthouse audit",
+      "Step 8: Verify performance score > 90"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Performance: API non-streaming responses < 500ms",
+    "steps": [
+      "Step 1: Make GET request to /api/chat/conversations",
+      "Step 2: Measure response time",
+      "Step 3: Verify response time < 500ms",
+      "Step 4: Test other non-streaming endpoints",
+      "Step 5: Verify all meet performance target",
+      "Step 6: Test with database load",
+      "Step 7: Verify performance remains acceptable"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Performance: Streaming first token arrives < 3 seconds",
+    "steps": [
+      "Step 1: Send query to /api/chat/query",
+      "Step 2: Measure time to first SSE chunk",
+      "Step 3: Verify first token < 3 seconds",
+      "Step 4: Test with complex queries",
+      "Step 5: Verify consistent performance",
+      "Step 6: Test with large context retrieval",
+      "Step 7: Verify acceptable latency"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Performance: Database queries use indexes and execute < 100ms",
+    "steps": [
+      "Step 1: Enable query logging",
+      "Step 2: Execute common queries",
+      "Step 3: Review EXPLAIN ANALYZE output",
+      "Step 4: Verify indexes are used",
+      "Step 5: Measure query execution time",
+      "Step 6: Verify queries < 100ms",
+      "Step 7: Identify slow queries",
+      "Step 8: Optimize and re-test"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Performance: Frontend bundle size is optimized < 200KB initial",
+    "steps": [
+      "Step 1: Build production frontend",
+      "Step 2: Analyze bundle size",
+      "Step 3: Verify initial bundle < 200KB (gzipped)",
+      "Step 4: Verify code splitting is working",
+      "Step 5: Verify lazy loading for routes",
+      "Step 6: Check for duplicate dependencies",
+      "Step 7: Verify tree shaking is effective"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Performance: No memory leaks in long-running sessions",
+    "steps": [
+      "Step 1: Open app in browser",
+      "Step 2: Start memory profiler",
+      "Step 3: Use app extensively (send 50+ messages)",
+      "Step 4: Monitor memory usage",
+      "Step 5: Verify memory stabilizes (no continuous growth)",
+      "Step 6: Test closing modals and components",
+      "Step 7: Verify event listeners are cleaned up",
+      "Step 8: Run for 30+ minutes",
+      "Step 9: Verify no significant memory increase"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Error handling: 404 page displays for invalid routes",
+    "steps": [
+      "Step 1: Navigate to non-existent route (e.g., /invalid)",
+      "Step 2: Verify custom 404 page is displayed",
+      "Step 3: Verify helpful message",
+      "Step 4: Verify link to return home",
+      "Step 5: Verify consistent styling with app",
+      "Step 6: Verify no console errors"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Error handling: 500 error page displays for server errors",
+    "steps": [
+      "Step 1: Simulate server error (500 response)",
+      "Step 2: Verify custom error page is displayed",
+      "Step 3: Verify helpful error message",
+      "Step 4: Verify option to retry or return home",
+      "Step 5: Verify error is logged for debugging",
+      "Step 6: Verify user can recover gracefully"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Cross-browser compatibility: Works in Chrome, Firefox, Safari, Edge",
+    "steps": [
+      "Step 1: Test in Chrome (latest)",
+      "Step 2: Verify all features work",
+      "Step 3: Test in Firefox (latest)",
+      "Step 4: Verify compatibility",
+      "Step 5: Test in Safari (latest)",
+      "Step 6: Verify compatibility",
+      "Step 7: Test in Edge (latest)",
+      "Step 8: Verify compatibility",
+      "Step 9: Test SSE streaming in all browsers",
+      "Step 10: Verify consistent behavior"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Mobile responsiveness: Touch interactions work smoothly",
+    "steps": [
+      "Step 1: Open app on mobile device or emulator",
+      "Step 2: Test tap interactions",
+      "Step 3: Test swipe to open/close sidebar",
+      "Step 4: Test scrolling in message list",
+      "Step 5: Test pinch to zoom (should be disabled)",
+      "Step 6: Test form inputs on mobile keyboard",
+      "Step 7: Verify touch targets are >= 44x44px",
+      "Step 8: Verify no double-tap zoom on buttons"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Mobile viewport: Meta viewport tag is correctly configured",
+    "steps": [
+      "Step 1: Inspect HTML head",
+      "Step 2: Verify <meta name=\"viewport\"> tag exists",
+      "Step 3: Verify width=device-width",
+      "Step 4: Verify initial-scale=1",
+      "Step 5: Test on mobile device",
+      "Step 6: Verify proper scaling",
+      "Step 7: Verify no horizontal scrolling"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Mobile UI: Hamburger menu appears and functions correctly",
+    "steps": [
+      "Step 1: Resize to mobile viewport",
+      "Step 2: Verify hamburger menu icon appears in header",
+      "Step 3: Click/tap menu icon",
+      "Step 4: Verify sidebar slides in from left",
+      "Step 5: Verify backdrop overlay appears",
+      "Step 6: Tap backdrop",
+      "Step 7: Verify sidebar closes",
+      "Step 8: Verify smooth animations"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Documentation: README provides clear setup instructions",
+    "steps": [
+      "Step 1: Read README.md",
+      "Step 2: Verify prerequisites are listed",
+      "Step 3: Verify step-by-step installation guide",
+      "Step 4: Verify environment variable documentation",
+      "Step 5: Verify running instructions for dev and prod",
+      "Step 6: Follow instructions on clean machine",
+      "Step 7: Verify app can be set up successfully",
+      "Step 8: Verify troubleshooting section exists"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Comprehensive end-to-end flow: User can complete full workflow from login to query",
+    "steps": [
+      "Step 1: Navigate to app URL",
+      "Step 2: Log in with credentials",
+      "Step 3: Create new conversation",
+      "Step 4: Send a query about SOP content",
+      "Step 5: Receive streaming AI response",
+      "Step 6: Verify source citations appear",
+      "Step 7: Send follow-up question",
+      "Step 8: Receive contextual response",
+      "Step 9: Rename conversation",
+      "Step 10: Share conversation",
+      "Step 11: Copy share link",
+      "Step 12: Open in incognito and verify read-only access",
+      "Step 13: Return to original session",
+      "Step 14: Log out successfully"
+    ],
+    "passes": false
+  }
+]
