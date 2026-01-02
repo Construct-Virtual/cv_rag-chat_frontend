@@ -13,7 +13,7 @@
       "Step 8: Verify user info is displayed in header",
       "Step 9: Verify user role is displayed in user menu"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",

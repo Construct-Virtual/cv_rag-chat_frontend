@@ -39,7 +39,8 @@ async def health_check():
     """Health check endpoint"""
     return {
         "status": "healthy",
-        "version": "1.0.0"
+        "version": "1.0.0",
+        "app_name": "SOP AI Agent Chat Interface"
     }
 
 
@@ -63,9 +64,12 @@ async def database_health():
         )
 
 
-# TODO: Import and include routers when implemented
-# from app.routers import auth, chat, sops
-# app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
+# Import and include routers
+from app.routers import auth
+
+app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
+# TODO: Implement chat and sops routers
+# from app.routers import chat, sops
 # app.include_router(chat.router, prefix="/api/chat", tags=["chat"])
 # app.include_router(sops.router, prefix="/api/sops", tags=["sops"])
 
