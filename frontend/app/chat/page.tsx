@@ -327,10 +327,12 @@ export default function ChatPage() {
       setEditedTitle("");
 
       // Show success message (simple alert for now)
-      alert("Conversation renamed successfully!");
+      setToast({ message: "Conversation renamed successfully!", type: "success" });
+      setTimeout(() => setToast(null), 3000);
     } catch (err) {
       console.error("Failed to rename conversation:", err);
-      alert("Failed to rename conversation. Please try again.");
+      setToast({ message: "Failed to rename conversation. Please try again.", type: "error" });
+      setTimeout(() => setToast(null), 3000);
     }
   };
 
