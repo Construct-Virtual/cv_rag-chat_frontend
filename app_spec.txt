@@ -1,0 +1,1275 @@
+<!--
+  SOP AI Agent Chat Interface
+  ===========================
+  
+  Complete project specification for building a role-based RAG-powered 
+  chat interface for company Standard Operating Procedures (SOPs)
+-->
+
+<project_specification>
+  <project_name>SOP AI Agent Chat Interface</project_name>
+
+  <overview>
+    An enterprise RAG-powered chat interface that allows employees to query company Standard Operating Procedures (SOPs) using natural language. The system implements role-based access control to ensure users only access SOPs they're authorized to view, with real-time streaming responses and conversation history management. The interface features a professional, clean design inspired by constructvirtual.com, with a focus on trust, clarity, and user experience.
+  </overview>
+
+  <technology_stack>
+    <frontend>
+      <framework>Next.js 16.1 (App Router)</framework>
+      <styling>Tailwind CSS 4.0</styling>
+      <state_management>React hooks, Context API, and Zustand for complex state</state_management>
+      <supabase_client>@supabase/supabase-js 2.89.0</supabase_client>
+      <streaming>Server-Sent Events (SSE) for AI response streaming</streaming>
+      <deployment>Vercel</deployment>
+      <port>3000</port>
+    </frontend>
+    <backend>
+      <framework>FastAPI 0.128.0 (Python 3.11+)</framework>
+      <ai_framework>LangChain 1.2.0</ai_framework>
+      <ai_core>LangChain Core 1.2.5</ai_core>
+      <ai_integration>LangChain OpenAI 1.1.6</ai_integration>
+      <llm_provider>OpenAI Python SDK 2.14.0</llm_provider>
+      <database_client>supabase-py (latest stable)</database_client>
+      <authentication>JWT tokens with custom middleware</authentication>
+      <deployment>Render (Free Tier initially)</deployment>
+      <port>8000</port>
+    </backend>
+    <database>
+      <primary>Supabase (PostgreSQL with pgvector extension)</primary>
+      <vector_search>Supabase Vector for embeddings similarity search</vector_search>
+      <models>OpenAI text-embedding-3-large for embeddings</models>
+    </database>
+    <communication>
+      <api>RESTful endpoints with SSE for streaming</api>
+      <auth_flow>JWT-based authentication with httpOnly cookies</auth_flow>
+    </communication>
+  </technology_stack>
+
+  <prerequisites>
+    <environment_setup>
+      - Node.js 20+ installed
+      - Python 3.11+ installed
+      - pnpm package manager (recommended for Next.js)
+      - pip for Python packages
+      - Supabase project created with vector extension enabled
+      - OpenAI API key
+      - Environment variables configured:
+        * NEXT_PUBLIC_SUPABASE_URL
+        * NEXT_PUBLIC_SUPABASE_ANON_KEY
+        * NEXT_PUBLIC_API_URL
+        * SUPABASE_SERVICE_ROLE_KEY (backend only)
+        * OPENAI_API_KEY
+        * JWT_SECRET_KEY
+    </environment_setup>
+  </prerequisites>
+
+  <core_features>
+    <authentication>
+      - User login with username/password (credentials pre-created by admin)
+      - JWT token-based session management with refresh tokens
+      - Automatic token refresh on API calls
+      - Secure logout with token invalidation
+      - Role assignment stored in user profile
+      - Protected routes on frontend and backend
+    </authentication>
+
+    <authorization>
+      - Role-based access control (RBAC) for SOPs
+      - Document-level permissions (entire SOP access control)
+      - Default: All users can access public SOPs
+      - Restricted SOPs require specific roles
+      - Real-time permission checking before document retrieval
+      - Clear "Permission Denied" messages for unauthorized access
+    </authorization>
+
+    <chat_functionality>
+      - Real-time streaming AI responses (word-by-word display)
+      - Natural language query processing
+      - Context-aware follow-up questions
+      - Citation of source SOPs with document references
+      - Conversation history display with timestamps
+      - New chat creation
+      - Delete individual messages or entire conversations
+      - Message regeneration option
+      - Copy message content to clipboard
+    </chat_functionality>
+
+    <rag_pipeline>
+      - Query understanding and reformulation
+      - Vector similarity search in Supabase
+      - Permission filtering before retrieval (filter embeddings by user role)
+      - Relevant chunk retrieval with metadata
+      - Context augmentation for LLM prompt
+      - Source attribution in responses
+      - Handling of "no relevant documents found" scenarios
+    </rag_pipeline>
+
+    <chat_management>
+      - Save conversations automatically
+      - View chat history sidebar
+      - Search through past conversations
+      - Rename conversations
+      - Share conversations via unique link
+      - View shared conversations (read-only)
+      - Delete conversations with confirmation
+      - Export conversation as PDF or text
+    </chat_management>
+
+    <user_interface>
+      - Clean, professional B2B design (constructvirtual.com inspired)
+      - Responsive layout (mobile, tablet, desktop)
+      - Dark theme as primary (with light mode option)
+      - Collapsible sidebar for chat history
+      - Loading states with skeleton screens
+      - Error handling with user-friendly messages
+      - Toast notifications for actions
+      - Smooth animations and transitions
+      - Typing indicators during AI response generation
+      - Auto-scroll to latest message
+    </user_interface>
+
+    <admin_features_future>
+      <!-- Phase 2 features - not in initial implementation -->
+      - User management interface
+      - Role creation and assignment
+      - SOP permission management
+      - Analytics dashboard (query patterns, popular SOPs)
+      - Feedback collection on AI responses
+    </admin_features_future>
+  </core_features>
+
+  <database_schema>
+    <tables>
+      <users>
+        - id (UUID, PRIMARY KEY, default: uuid_generate_v4())
+        - username (TEXT, UNIQUE, NOT NULL)
+        - password_hash (TEXT, NOT NULL) -- bcrypt hashed
+        - full_name (TEXT)
+        - email (TEXT, UNIQUE)
+        - role (TEXT, NOT NULL, default: 'employee') -- e.g., 'employee', 'manager', 'hr', 'finance', 'admin'
+        - avatar_url (TEXT)
+        - is_active (BOOLEAN, default: true)
+        - created_at (TIMESTAMP, default: now())
+        - updated_at (TIMESTAMP, default: now())
+        - last_login (TIMESTAMP)
+      </users>
+
+      <documents>
+        <!-- Existing table from your setup -->
+        - id (INT8, PRIMARY KEY)
+        - content (TEXT, NOT NULL) -- original text chunk
+        - metadata (JSONB) -- contains: file_name, chunk_index, total_chunks, page_number, etc.
+        - embedding (VECTOR(3072)) -- OpenAI text-embedding-3-large dimensions
+        - created_at (TIMESTAMP, default: now())
+      </documents>
+
+      <sop_permissions>
+        <!-- New table for document-level access control -->
+        - id (UUID, PRIMARY KEY, default: uuid_generate_v4())
+        - file_name (TEXT, UNIQUE, NOT NULL) -- matches metadata.file_name in documents
+        - display_name (TEXT) -- human-readable SOP name
+        - description (TEXT)
+        - allowed_roles (TEXT[], default: '{}') -- empty array = everyone can access, or specific roles: ['manager', 'hr']
+        - is_public (BOOLEAN, default: true) -- if true, everyone can access
+        - category (TEXT) -- e.g., 'HR', 'Engineering', 'Finance', 'General'
+        - created_at (TIMESTAMP, default: now())
+        - updated_at (TIMESTAMP, default: now())
+        - created_by (UUID, FOREIGN KEY -> users.id)
+      </sop_permissions>
+
+      <conversations>
+        - id (UUID, PRIMARY KEY, default: uuid_generate_v4())
+        - user_id (UUID, FOREIGN KEY -> users.id, NOT NULL)
+        - title (TEXT, NOT NULL, default: 'New Conversation')
+        - created_at (TIMESTAMP, default: now())
+        - updated_at (TIMESTAMP, default: now())
+        - is_shared (BOOLEAN, default: false)
+        - share_token (TEXT, UNIQUE) -- UUID for sharing, only set if is_shared = true
+      </conversations>
+
+      <messages>
+        - id (UUID, PRIMARY KEY, default: uuid_generate_v4())
+        - conversation_id (UUID, FOREIGN KEY -> conversations.id, ON DELETE CASCADE)
+        - role (TEXT, NOT NULL) -- 'user' or 'assistant'
+        - content (TEXT, NOT NULL)
+        - sources (JSONB) -- array of source documents cited: [{file_name, chunk_id, relevance_score}]
+        - created_at (TIMESTAMP, default: now())
+        - token_count (INT)
+      </messages>
+
+      <refresh_tokens>
+        - id (UUID, PRIMARY KEY, default: uuid_generate_v4())
+        - user_id (UUID, FOREIGN KEY -> users.id, ON DELETE CASCADE)
+        - token (TEXT, UNIQUE, NOT NULL)
+        - expires_at (TIMESTAMP, NOT NULL)
+        - created_at (TIMESTAMP, default: now())
+      </refresh_tokens>
+    </tables>
+
+    <indexes>
+      - CREATE INDEX idx_documents_embedding ON documents USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
+      - CREATE INDEX idx_messages_conversation ON messages(conversation_id);
+      - CREATE INDEX idx_conversations_user ON conversations(user_id);
+      - CREATE INDEX idx_sop_permissions_file_name ON sop_permissions(file_name);
+      - CREATE INDEX idx_users_username ON users(username);
+      - CREATE INDEX idx_refresh_tokens_user ON refresh_tokens(user_id);
+    </indexes>
+
+    <row_level_security>
+      <!-- Enable RLS on sensitive tables -->
+      - conversations: Users can only view their own conversations or shared ones
+      - messages: Users can only view messages from accessible conversations
+      - refresh_tokens: Users can only manage their own tokens
+    </row_level_security>
+  </database_schema>
+
+  <api_endpoints_summary>
+    <authentication>
+      - POST /api/auth/login
+        * Body: {username, password}
+        * Returns: {access_token, refresh_token, user_info}
+      
+      - POST /api/auth/refresh
+        * Body: {refresh_token}
+        * Returns: {access_token}
+      
+      - POST /api/auth/logout
+        * Headers: Authorization: Bearer {token}
+        * Returns: {message: "Logged out successfully"}
+      
+      - GET /api/auth/me
+        * Headers: Authorization: Bearer {token}
+        * Returns: {user_info with role}
+    </authentication>
+
+    <chat>
+      - POST /api/chat/query (SSE streaming endpoint)
+        * Headers: Authorization: Bearer {token}
+        * Body: {conversation_id?, message, stream: true}
+        * Returns: SSE stream of response chunks with sources
+        * Authorization: Filters embeddings by user role before retrieval
+      
+      - GET /api/chat/conversations
+        * Headers: Authorization: Bearer {token}
+        * Query params: ?limit=20&offset=0
+        * Returns: Array of user's conversations
+      
+      - POST /api/chat/conversations
+        * Headers: Authorization: Bearer {token}
+        * Body: {title?}
+        * Returns: New conversation object
+      
+      - GET /api/chat/conversations/:id
+        * Headers: Authorization: Bearer {token}
+        * Returns: Conversation with all messages
+      
+      - PUT /api/chat/conversations/:id
+        * Headers: Authorization: Bearer {token}
+        * Body: {title}
+        * Returns: Updated conversation
+      
+      - DELETE /api/chat/conversations/:id
+        * Headers: Authorization: Bearer {token}
+        * Returns: {message: "Deleted successfully"}
+      
+      - POST /api/chat/conversations/:id/share
+        * Headers: Authorization: Bearer {token}
+        * Returns: {share_url, share_token}
+      
+      - DELETE /api/chat/conversations/:id/share
+        * Headers: Authorization: Bearer {token}
+        * Returns: {message: "Sharing disabled"}
+      
+      - GET /api/chat/shared/:share_token
+        * Public endpoint (no auth required)
+        * Returns: Conversation with messages (read-only)
+    </chat>
+
+    <sop_management>
+      - GET /api/sops
+        * Headers: Authorization: Bearer {token}
+        * Returns: List of SOPs accessible to user's role
+      
+      - GET /api/sops/:file_name/permissions
+        * Headers: Authorization: Bearer {token}
+        * Returns: Permission details for specific SOP
+      
+      <!-- Admin endpoints - Phase 2 -->
+      - POST /api/sops/permissions
+      - PUT /api/sops/permissions/:id
+      - DELETE /api/sops/permissions/:id
+    </sop_management>
+
+    <health_monitoring>
+      - GET /api/health
+        * Returns: {status: "healthy", version: "1.0.0"}
+      
+      - GET /api/health/db
+        * Returns: Database connection status
+    </health_monitoring>
+  </api_endpoints_summary>
+
+  <authorization_flow>
+    <permission_checking_strategy>
+      Option 1: Pre-retrieval Filtering (RECOMMENDED)
+      -----------------------------------------------
+      1. User sends query
+      2. Backend extracts user role from JWT
+      3. Query sop_permissions table for accessible file_names
+      4. Perform vector search with WHERE clause filtering:
+         - metadata->>'file_name' IN (accessible_files)
+      5. Retrieve only authorized chunks
+      6. Generate response with sources
+      
+      Benefits:
+      - More secure (never retrieves unauthorized data)
+      - Better performance (smaller result set)
+      - Clearer audit trail
+      - No risk of accidental data leakage
+      
+      Implementation:
+      ```python
+      # Get user's accessible files
+      accessible_files = get_accessible_files(user_role)
+      
+      # Vector search with permission filter
+      results = supabase.rpc('match_documents', {
+        'query_embedding': query_embedding,
+        'match_threshold': 0.7,
+        'match_count': 10,
+        'filter': {'metadata->file_name': {'in': accessible_files}}
+      })
+      ```
+    </permission_checking_strategy>
+
+    <handling_unauthorized_access>
+      When a user's query semantically matches restricted content:
+      1. Vector search returns no results (filtered out)
+      2. LLM receives empty context
+      3. System response: "I don't have access to information about that topic. 
+         This may be because the relevant documents are restricted. 
+         Please contact your administrator if you believe you should have access."
+      4. Log the attempt (user_id, query, timestamp) for security monitoring
+    </handling_unauthorized_access>
+
+    <permission_resolution>
+      User has access to SOP if:
+      - sop_permissions.is_public = true (public SOP)
+      OR
+      - user.role IN sop_permissions.allowed_roles (role-based access)
+      OR
+      - SOP not in sop_permissions table (default to public)
+    </permission_resolution>
+  </authorization_flow>
+
+  <ui_layout>
+    <main_structure>
+      Three-column layout with responsive behavior:
+      - Left: Collapsible conversation history sidebar (300px, collapses on mobile)
+      - Center: Main chat interface (flex-grow)
+      - Right: Optional context/sources panel (300px, hidden on mobile)
+      - Top: Fixed header with app branding and user menu
+    </main_structure>
+
+    <header>
+      - App logo/name on left (click to go home)
+      - Search bar for conversations (center, hidden on mobile)
+      - User profile dropdown on right:
+        * User name and role
+        * Settings
+        * Logout
+      - Theme toggle (dark/light mode)
+      - Height: 64px, dark background with subtle border
+    </header>
+
+    <conversation_sidebar>
+      - "New Chat" button at top (prominent, primary color)
+      - Search/filter conversations input
+      - Scrollable list of conversations:
+        * Title (truncated)
+        * Last message preview
+        * Timestamp (relative: "2 hours ago")
+        * Hover: Edit and Delete icons
+      - Group by: Today, Yesterday, Last 7 days, Older
+      - Toggle button to collapse/expand
+      - Mobile: Overlay with backdrop, swipe to close
+    </conversation_sidebar>
+
+    <main_chat_area>
+      - Header:
+        * Conversation title (editable on click)
+        * Share button
+        * Settings dropdown (rename, delete, export)
+      
+      - Messages container:
+        * Scrollable area with auto-scroll to bottom
+        * Messages alternate styling (user vs assistant)
+        * User messages: right-aligned, blue background
+        * Assistant messages: left-aligned, dark gray background
+        * Timestamps on hover
+        * Message actions on hover: Copy, Regenerate (assistant only)
+        * Source citations as expandable chips
+      
+      - Input area (fixed at bottom):
+        * Textarea with auto-expand (max 5 lines)
+        * Send button (disabled when empty)
+        * Character counter (optional)
+        * "Thinking..." indicator during streaming
+        * Attachment button (Phase 2)
+        * Suggested prompts when conversation is empty
+    </main_chat_area>
+
+    <sources_panel>
+      <!-- Optional enhancement -->
+      - Shows source documents for current assistant message
+      - File name, relevance score, preview snippet
+      - Click to expand full context
+      - "Request Access" button for restricted docs
+    </sources_panel>
+
+    <modals_overlays>
+      - Confirmation dialog for delete actions
+      - Share conversation modal with copy link
+      - Settings modal (theme, preferences)
+      - Login modal (if session expires)
+      - Error toast notifications (top-right corner)
+      - Success toast notifications
+    </modals_overlays>
+  </ui_layout>
+
+  <design_system>
+    <color_palette>
+      <!-- Dark theme (primary) - inspired by constructvirtual.com -->
+      - Background Primary: #0A0A0A (deep black)
+      - Background Secondary: #1A1A1A (elevated surfaces)
+      - Background Tertiary: #2A2A2A (cards, input backgrounds)
+      - Accent Primary: #3B82F6 (blue - CTAs, links)
+      - Accent Secondary: #8B5CF6 (purple - hover states)
+      - Text Primary: #F5F5F5 (white/near-white)
+      - Text Secondary: #A1A1A1 (gray for metadata)
+      - Text Muted: #737373 (placeholders, disabled)
+      - Border: #2A2A2A (subtle dividers)
+      - Success: #10B981 (green)
+      - Warning: #F59E0B (amber)
+      - Error: #EF4444 (red)
+      - User Message: #2563EB (darker blue)
+      - Assistant Message: #1F2937 (charcoal)
+
+      <!-- Light theme (optional) -->
+      - Background Primary: #FFFFFF
+      - Background Secondary: #F9FAFB
+      - Background Tertiary: #F3F4F6
+      - Text Primary: #111827
+      - Text Secondary: #6B7280
+      - Border: #E5E7EB
+    </color_palette>
+
+    <typography>
+      - Font family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif
+      - Headings: font-semibold, tracking-tight
+        * H1: text-3xl (30px)
+        * H2: text-2xl (24px)
+        * H3: text-xl (20px)
+      - Body: font-normal, text-base (16px), leading-relaxed (1.625)
+      - Small: text-sm (14px) for metadata, timestamps
+      - Code: 'JetBrains Mono', 'Fira Code', monospace
+      - Message text: text-[15px] leading-7 for readability
+    </typography>
+
+    <spacing>
+      - Base unit: 4px (Tailwind default)
+      - Container padding: px-6 (24px)
+      - Component gap: gap-4 (16px)
+      - Section spacing: space-y-8 (32px)
+      - Message spacing: space-y-4 (16px)
+    </spacing>
+
+    <components>
+      <buttons>
+        - Primary: 
+          * bg-blue-600 hover:bg-blue-700
+          * text-white font-medium
+          * rounded-lg px-4 py-2
+          * transition-colors duration-200
+        
+        - Secondary:
+          * border border-gray-700 hover:bg-gray-800
+          * text-gray-300
+          * rounded-lg px-4 py-2
+        
+        - Ghost:
+          * hover:bg-gray-800
+          * text-gray-400 hover:text-gray-200
+          * rounded-md p-2
+        
+        - Icon:
+          * w-10 h-10 rounded-full
+          * hover:bg-gray-800
+          * flex items-center justify-center
+      </buttons>
+
+      <inputs>
+        - Background: bg-gray-900
+        - Border: border border-gray-800 focus:border-blue-500
+        - Text: text-white placeholder:text-gray-500
+        - Rounded: rounded-lg
+        - Padding: px-4 py-3
+        - Focus ring: focus:ring-2 focus:ring-blue-500/50
+      </inputs>
+
+      <cards>
+        - Background: bg-gray-900
+        - Border: border border-gray-800
+        - Rounded: rounded-xl
+        - Padding: p-6
+        - Hover: hover:border-gray-700 transition-colors
+        - Shadow: shadow-lg (for elevated cards)
+      </cards>
+
+      <messages>
+        - User message:
+          * ml-auto max-w-[80%]
+          * bg-blue-600 text-white
+          * rounded-2xl rounded-tr-sm
+          * px-4 py-3
+        
+        - Assistant message:
+          * mr-auto max-w-[80%]
+          * bg-gray-800 text-gray-100
+          * rounded-2xl rounded-tl-sm
+          * px-4 py-3
+        
+        - Source citation chip:
+          * inline-flex items-center gap-1
+          * bg-gray-700 text-gray-300
+          * text-xs rounded-full
+          * px-2 py-1 mt-2
+      </messages>
+
+      <sidebar_items>
+        - Hover: hover:bg-gray-800
+        - Active: bg-gray-800 border-l-2 border-blue-500
+        - Text: text-gray-300 hover:text-white
+        - Padding: px-3 py-2
+        - Rounded: rounded-md
+      </sidebar_items>
+    </components>
+
+    <animations>
+      - Transitions: transition-all duration-200 ease-in-out
+      - Message fade-in: animate-fade-in-up
+      - Skeleton loading: animate-pulse
+      - Streaming text: typewriter effect with cursor
+      - Modal entrance: animate-fade-in + scale-95 to scale-100
+      - Sidebar slide: translate-x-[-100%] to translate-x-0
+      - Toast notifications: slide-in from top-right
+      - Smooth scrolling: scroll-smooth
+    </animations>
+
+    <loading_states>
+      - Skeleton screens for:
+        * Conversation list items
+        * Message bubbles
+        * User profile
+      - Spinner for:
+        * Button actions
+        * Page transitions
+      - Typing indicator for AI responses:
+        * Three animated dots
+        * Gray background
+        * Bouncing animation
+    </loading_states>
+  </design_system>
+
+  <key_interactions>
+    <user_login_flow>
+      1. User visits app URL
+      2. Redirected to /login if not authenticated
+      3. Enters username and password
+      4. Frontend sends POST to /api/auth/login
+      5. Backend validates credentials, returns JWT + refresh token
+      6. Frontend stores tokens (access in memory, refresh in httpOnly cookie)
+      7. Redirected to /chat (main interface)
+    </user_login_flow>
+
+    <new_conversation_flow>
+      1. User clicks "New Chat" button
+      2. Frontend creates new conversation via POST /api/chat/conversations
+      3. UI navigates to new conversation view with empty state
+      4. Shows suggested prompts or welcome message
+      5. User types first message and clicks send
+    </new_conversation_flow>
+
+    <sending_message_and_streaming_response>
+      1. User types message in input field
+      2. User clicks Send or presses Enter
+      3. Frontend:
+         a. Displays user message immediately (optimistic update)
+         b. Shows typing indicator for assistant
+         c. Creates SSE connection to POST /api/chat/query
+      4. Backend:
+         a. Extracts user role from JWT
+         b. Queries accessible SOPs from sop_permissions
+         c. Generates embedding for user query
+         d. Performs vector search with permission filter
+         e. If no results: returns "no access" message
+         f. If results: builds context and prompts LLM
+         g. Streams response chunks via SSE
+      5. Frontend:
+         a. Receives SSE chunks
+         b. Appends each chunk to assistant message
+         c. Updates UI in real-time (typewriter effect)
+         d. Displays source citations when available
+         e. Closes connection when complete
+      6. Backend saves complete message to database
+    </sending_message_and_streaming_response>
+
+    <handling_permission_denied>
+      1. User asks about restricted SOP content
+      2. Backend filters vectors by permissions
+      3. No matching vectors found (all filtered out)
+      4. LLM receives empty context
+      5. System returns:
+         "I don't have access to information about that topic. 
+          The relevant documents may be restricted based on your role.
+          Your current role: [role_name]
+          Contact your administrator if you need access."
+      6. Message logged for security audit
+    </handling_permission_denied>
+
+    <sharing_conversation>
+      1. User clicks "Share" button in conversation header
+      2. Modal opens: "Share this conversation?"
+      3. User confirms
+      4. Frontend calls POST /api/chat/conversations/:id/share
+      5. Backend:
+         a. Generates unique share_token (UUID)
+         b. Updates conversation: is_shared = true
+         c. Returns share URL
+      6. Frontend displays URL with "Copy Link" button
+      7. User copies and shares link
+      8. Recipients access via /shared/:share_token (no auth needed)
+      9. Shared view is read-only with banner: "Shared by [user]"
+    </sharing_conversation>
+
+    <conversation_history_management>
+      1. User clicks conversation in sidebar
+      2. Frontend fetches GET /api/chat/conversations/:id
+      3. Messages load and display
+      4. User can:
+         - Hover over conversation title to show edit/delete icons
+         - Click title to rename (inline editing)
+         - Click delete (confirmation modal appears)
+         - Search conversations using sidebar search
+      5. Deleted conversations cascade delete all messages
+    </conversation_history_management>
+
+    <session_expiry_handling>
+      1. Access token expires (30 min default)
+      2. Frontend detects 401 response on API call
+      3. Automatically attempts refresh:
+         a. Calls POST /api/auth/refresh with refresh_token
+         b. Receives new access_token
+         c. Retries original request
+      4. If refresh fails (refresh token expired):
+         a. Clears stored tokens
+         b. Shows "Session expired" toast
+         c. Redirects to /login
+         d. Preserves current URL for redirect after login
+    </session_expiry_handling>
+  </key_interactions>
+
+  <implementation_steps>
+    <step number="1">
+      <title>Database Setup and Schema</title>
+      <tasks>
+        - Create Supabase project and enable pgvector extension
+        - Run SQL migrations to create all tables (users, documents, sop_permissions, conversations, messages, refresh_tokens)
+        - Create database indexes for performance
+        - Set up Row Level Security (RLS) policies
+        - Create initial admin user manually in database
+        - Seed sop_permissions table with initial SOPs (set all to public for testing)
+        - Test vector search functionality with sample queries
+      </tasks>
+      <estimated_time>4-6 hours</estimated_time>
+    </step>
+
+    <step number="2">
+      <title>Backend Core Setup (FastAPI)</title>
+      <tasks>
+        - Initialize FastAPI project structure:
+          * /app/main.py
+          * /app/config.py (environment variables)
+          * /app/models/ (Pydantic models)
+          * /app/routers/ (API endpoints)
+          * /app/services/ (business logic)
+          * /app/utils/ (helpers)
+        - Set up CORS middleware for Vercel frontend
+        - Create Supabase client connection
+        - Implement JWT authentication utilities:
+          * create_access_token()
+          * verify_token()
+          * get_current_user() dependency
+        - Create health check endpoints
+        - Test server runs on Render free tier
+      </tasks>
+      <estimated_time>6-8 hours</estimated_time>
+    </step>
+
+    <step number="3">
+      <title>Authentication System (Backend)</title>
+      <tasks>
+        - Implement POST /api/auth/login:
+          * Validate username/password
+          * Check user is_active status
+          * Generate JWT tokens
+          * Update last_login timestamp
+          * Return user info with role
+        - Implement POST /api/auth/refresh:
+          * Validate refresh token from database
+          * Generate new access token
+          * Handle expired refresh tokens
+        - Implement POST /api/auth/logout:
+          * Invalidate refresh token in database
+        - Implement GET /api/auth/me:
+          * Return current user info from JWT
+        - Add authentication middleware to protected routes
+        - Test all auth flows with Postman/Insomnia
+      </tasks>
+      <estimated_time>8-10 hours</estimated_time>
+    </step>
+
+    <step number="4">
+      <title>RAG Pipeline Implementation (Backend)</title>
+      <tasks>
+        - Set up LangChain with OpenAI:
+          * Initialize embeddings model (text-embedding-3-large)
+          * Initialize chat model (gpt-4-turbo or gpt-3.5-turbo)
+        - Create get_accessible_files(user_role) function:
+          * Query sop_permissions table
+          * Return list of file_names user can access
+        - Implement vector search with permission filtering:
+          * Generate embedding for user query
+          * Query documents table with vector similarity
+          * Apply WHERE filter for accessible files
+          * Return top-k relevant chunks with metadata
+        - Create LangChain RAG chain:
+          * Context retrieval
+          * Prompt template with system instructions
+          * Response generation with source tracking
+        - Handle edge cases:
+          * No relevant documents found
+          * All relevant documents restricted
+          * Query reformulation if needed
+        - Test RAG pipeline with various queries and roles
+      </tasks>
+      <estimated_time>12-15 hours</estimated_time>
+    </step>
+
+    <step number="5">
+      <title>Streaming Chat Endpoint (Backend)</title>
+      <tasks>
+        - Implement POST /api/chat/query with SSE:
+          * Accept: conversation_id, message, stream flag
+          * Authenticate user via JWT
+          * Get user role for permission filtering
+          * Perform RAG retrieval
+          * Stream LLM response chunks via SSE
+          * Format: data: {"chunk": "text", "sources": [...]}
+          * Save complete message and sources to database
+        - Handle streaming errors gracefully
+        - Implement timeout handling (max 60s)
+        - Test streaming with frontend SSE client
+        - Optimize for low latency (minimize retrieval time)
+      </tasks>
+      <estimated_time>8-10 hours</estimated_time>
+    </step>
+
+    <step number="6">
+      <title>Conversation Management Endpoints (Backend)</title>
+      <tasks>
+        - Implement GET /api/chat/conversations:
+          * Fetch user's conversations with pagination
+          * Include last message preview and timestamp
+          * Order by updated_at DESC
+        - Implement POST /api/chat/conversations:
+          * Create new conversation
+          * Auto-generate title or accept custom title
+        - Implement GET /api/chat/conversations/:id:
+          * Fetch conversation with all messages
+          * Verify user ownership
+        - Implement PUT /api/chat/conversations/:id:
+          * Update conversation title
+        - Implement DELETE /api/chat/conversations/:id:
+          * Cascade delete messages
+          * Verify user ownership
+        - Implement POST /api/chat/conversations/:id/share:
+          * Generate unique share_token
+          * Update is_shared flag
+          * Return shareable URL
+        - Implement GET /api/chat/shared/:share_token:
+          * Public endpoint (no auth)
+          * Return conversation read-only
+        - Test all CRUD operations
+      </tasks>
+      <estimated_time>10-12 hours</estimated_time>
+    </step>
+
+    <step number="7">
+      <title>Frontend Project Setup (Next.js 16)</title>
+      <tasks>
+        - Initialize Next.js 16 project with App Router
+        - Install dependencies:
+          * @supabase/supabase-js@2.89.0
+          * tailwindcss@4.0
+          * zustand (state management)
+          * lucide-react (icons)
+          * date-fns (date formatting)
+          * react-hot-toast (notifications)
+        - Set up Tailwind CSS 4.0 configuration
+        - Create folder structure:
+          * /app (routes)
+          * /components (reusable UI)
+          * /lib (utilities, API client)
+          * /hooks (custom hooks)
+          * /stores (Zustand stores)
+          * /types (TypeScript types)
+        - Configure environment variables
+        - Create API client with axios/fetch wrapper
+        - Set up TypeScript types for all API responses
+      </tasks>
+      <estimated_time>4-6 hours</estimated_time>
+    </step>
+
+    <step number="8">
+      <title>Authentication UI (Frontend)</title>
+      <tasks>
+        - Create login page (/app/login/page.tsx):
+          * Username and password inputs
+          * Form validation
+          * Error handling
+          * "Remember me" option (optional)
+        - Implement AuthContext/Provider:
+          * Store user state
+          * Store access token (memory)
+          * Handle token refresh logic
+          * Provide useAuth() hook
+        - Create ProtectedRoute wrapper component
+        - Implement automatic token refresh on API calls
+        - Handle session expiry (redirect to login)
+        - Create user profile dropdown in header:
+          * Display user name and role
+          * Logout button
+        - Test full auth flow
+      </tasks>
+      <estimated_time>8-10 hours</estimated_time>
+    </step>
+
+    <step number="9">
+      <title>Chat Interface Layout (Frontend)</title>
+      <tasks>
+        - Create main layout (/app/chat/layout.tsx):
+          * Header component
+          * Sidebar component
+          * Main content area
+        - Implement responsive design:
+          * Desktop: Three-column layout
+          * Tablet: Sidebar collapses to overlay
+          * Mobile: Sidebar as drawer, full-width chat
+        - Create Header component:
+          * App branding
+          * Search bar
+          * User menu
+          * Theme toggle
+        - Create Sidebar component:
+          * New Chat button
+          * Conversation list
+          * Search/filter input
+          * Collapsible functionality
+        - Style with Tailwind (dark theme)
+        - Test responsiveness on all screen sizes
+      </tasks>
+      <estimated_time>10-12 hours</estimated_time>
+    </step>
+
+    <step number="10">
+      <title>Chat Messages Display (Frontend)</title>
+      <tasks>
+        - Create Message component:
+          * User message styling
+          * Assistant message styling
+          * Timestamp display
+          * Markdown rendering for code blocks
+          * Source citation chips
+        - Create MessageList component:
+          * Scrollable container
+          * Auto-scroll to bottom
+          * Virtualization for long conversations (optional)
+          * Loading skeleton
+        - Implement message actions:
+          * Copy to clipboard
+          * Regenerate (assistant only)
+          * Delete (with confirmation)
+        - Create TypingIndicator component
+        - Create EmptyState component (no messages yet)
+        - Test with various message types and lengths
+      </tasks>
+      <estimated_time>10-12 hours</estimated_time>
+    </step>
+
+    <step number="11">
+      <title>Chat Input and Streaming (Frontend)</title>
+      <tasks>
+        - Create ChatInput component:
+          * Auto-expanding textarea
+          * Send button (disabled when empty)
+          * Character counter (optional)
+          * Enter to send, Shift+Enter for new line
+        - Implement SSE streaming client:
+          * Connect to POST /api/chat/query
+          * Receive and parse SSE events
+          * Update message in real-time
+          * Handle connection errors
+          * Close connection on complete
+        - Create useChatStream hook:
+          * Manage streaming state
+          * Handle message queue
+          * Error handling
+        - Implement optimistic UI updates:
+          * Show user message immediately
+          * Show typing indicator
+          * Stream assistant response
+        - Add loading states and error handling
+        - Test streaming with various query types
+      </tasks>
+      <estimated_time>12-14 hours</estimated_time>
+    </step>
+
+    <step number="12">
+      <title>Conversation Management UI (Frontend)</title>
+      <tasks>
+        - Implement conversation CRUD in sidebar:
+          * Fetch and display conversations
+          * Click to switch conversations
+          * Inline title editing
+          * Delete with confirmation modal
+        - Create conversation search/filter:
+          * Local filtering by title
+          * Debounced search input
+        - Implement conversation grouping:
+          * Today, Yesterday, Last 7 days, Older
+        - Create share conversation modal:
+          * Share button in header
+          * Generate and display share link
+          * Copy to clipboard
+          * Disable sharing option
+        - Create shared conversation view:
+          * Public route /shared/:token
+          * Read-only mode
+          * Show "Shared by" banner
+        - Test all conversation management features
+      </tasks>
+      <estimated_time>10-12 hours</estimated_time>
+    </step>
+
+    <step number="13">
+      <title>Error Handling and Edge Cases</title>
+      <tasks>
+        - Implement comprehensive error handling:
+          * Network errors (offline, timeout)
+          * API errors (4xx, 5xx)
+          * Permission denied scenarios
+          * Empty search results
+        - Create error boundary components
+        - Implement retry logic for failed requests
+        - Add toast notifications:
+          * Success messages
+          * Error messages
+          * Warning messages
+        - Handle edge cases:
+          * Very long messages
+          * Special characters in queries
+          * Rapid successive messages
+          * Browser refresh during streaming
+        - Add loading states everywhere
+        - Test all error scenarios
+      </tasks>
+      <estimated_time>8-10 hours</estimated_time>
+    </step>
+
+    <step number="14">
+      <title>UI Polish and Animations</title>
+      <tasks>
+        - Implement all animations:
+          * Page transitions
+          * Message fade-in
+          * Sidebar slide
+          * Modal entrance/exit
+          * Hover effects
+        - Add skeleton loaders:
+          * Conversation list
+          * Message history
+          * User profile
+        - Polish visual design:
+          * Consistent spacing
+          * Proper contrast ratios
+          * Smooth hover states
+          * Professional appearance
+        - Implement dark/light theme toggle:
+          * Theme context
+          * Persist preference
+          * Smooth transitions
+        - Optimize font loading
+        - Add micro-interactions
+        - Final design review
+      </tasks>
+      <estimated_time>8-10 hours</estimated_time>
+    </step>
+
+    <step number="15">
+      <title>Testing, Optimization, and Deployment</title>
+      <tasks>
+        - Test all user flows end-to-end:
+          * Login to query to logout
+          * Multiple conversations
+          * Share conversation flow
+          * Permission denied scenarios
+        - Performance optimization:
+          * Code splitting
+          * Image optimization
+          * API response caching
+          * Minimize bundle size
+        - Accessibility testing:
+          * Keyboard navigation
+          * Screen reader support
+          * ARIA labels
+          * Focus management
+        - Cross-browser testing (Chrome, Firefox, Safari, Edge)
+        - Mobile responsiveness testing
+        - Deploy backend to Render:
+          * Set environment variables
+          * Configure CORS for Vercel domain
+          * Test production API
+        - Deploy frontend to Vercel:
+          * Set environment variables
+          * Configure custom domain (optional)
+          * Test production app
+        - Create user documentation
+        - Create admin documentation
+      </tasks>
+      <estimated_time>12-15 hours</estimated_time>
+    </step>
+  </implementation_steps>
+
+  <success_criteria>
+    <functionality>
+      - Users can log in with username/password
+      - Users can create and manage multiple conversations
+      - Chat streaming works smoothly with real-time updates
+      - RAG retrieval returns relevant SOP content
+      - Permission system prevents unauthorized access
+      - Source citations appear in assistant responses
+      - Conversation history persists correctly
+      - Sharing conversations works via unique link
+      - All CRUD operations function without errors
+      - Token refresh happens automatically
+    </functionality>
+
+    <user_experience>
+      - Intuitive navigation and clear UI hierarchy
+      - Responsive design works on mobile, tablet, desktop
+      - Fast response times (< 3s for first token)
+      - Smooth animations and transitions
+      - Clear feedback for all user actions
+      - Professional, polished appearance
+      - Easy to read message formatting
+      - Accessible (keyboard navigation, screen readers)
+      - No layout shifts or janky scrolling
+    </user_experience>
+
+    <technical_quality>
+      - Clean, maintainable code structure
+      - Proper separation of concerns (MVC pattern)
+      - Type-safe TypeScript throughout
+      - Secure authentication (JWT best practices)
+      - Input validation and sanitization
+      - Proper error handling and logging
+      - No console errors in production
+      - Optimized API calls (no unnecessary requests)
+      - Efficient database queries (use of indexes)
+    </technical_quality>
+
+    <security>
+      - Passwords properly hashed (bcrypt)
+      - JWT tokens securely managed
+      - Refresh tokens stored safely
+      - SQL injection prevention (parameterized queries)
+      - XSS prevention (sanitized inputs)
+      - CORS properly configured
+      - Rate limiting on auth endpoints (Phase 2)
+      - Permission checks on all protected endpoints
+      - Audit logging for security events
+    </security>
+
+    <performance>
+      - Initial page load < 2s (LCP)
+      - API response time < 500ms (non-streaming)
+      - Streaming first token < 3s
+      - Smooth 60fps animations
+      - Bundle size optimized (< 200KB initial)
+      - Database queries < 100ms
+      - Proper caching strategies
+      - No memory leaks in long-running sessions
+    </performance>
+
+    <scalability_considerations>
+      - Database indexes for query performance
+      - Pagination for conversation lists
+      - Connection pooling for Supabase
+      - Stateless backend (easy to horizontally scale)
+      - CDN for static assets (Vercel automatic)
+      - Ready for Redis caching layer (Phase 2)
+      - Ready for queue system for async tasks (Phase 2)
+    </scalability_considerations>
+  </success_criteria>
+
+  <future_enhancements>
+    <phase_2>
+      - Admin dashboard for user and SOP management
+      - Advanced analytics (popular queries, user engagement)
+      - File upload for querying specific documents
+      - Multi-modal support (images in SOPs)
+      - Voice input/output
+      - Custom roles beyond predefined set
+      - Department-level permissions
+      - Approval workflows for sharing conversations
+      - Export conversations to various formats
+      - Integration with Slack/Teams for notifications
+    </phase_2>
+
+    <phase_3>
+      - Multi-language support (i18n)
+      - Advanced search across all conversations
+      - Feedback system for AI responses
+      - A/B testing for prompt engineering
+      - Custom AI personas for different departments
+      - Real-time collaboration on conversations
+      - API for third-party integrations
+      - Mobile native apps (React Native)
+      - Offline mode with sync
+      - Advanced security (2FA, SSO)
+    </phase_3>
+  </future_enhancements>
+
+  <deployment_checklist>
+    <pre_deployment>
+      - [ ] All environment variables configured
+      - [ ] Database migrations completed
+      - [ ] Initial users created in database
+      - [ ] SOP permissions populated
+      - [ ] API endpoints tested with Postman
+      - [ ] Frontend builds without errors
+      - [ ] All tests passing
+      - [ ] Security review completed
+      - [ ] Performance benchmarks met
+      - [ ] Documentation complete
+    </pre_deployment>
+
+    <backend_deployment_render>
+      - [ ] Create new Web Service on Render
+      - [ ] Connect GitHub repository
+      - [ ] Set build command: pip install -r requirements.txt
+      - [ ] Set start command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+      - [ ] Add environment variables
+      - [ ] Configure custom domain (optional)
+      - [ ] Enable auto-deploy on main branch
+      - [ ] Test health check endpoint
+      - [ ] Monitor logs for errors
+    </backend_deployment_render>
+
+    <frontend_deployment_vercel>
+      - [ ] Connect GitHub repository to Vercel
+      - [ ] Configure build settings (auto-detected for Next.js)
+      - [ ] Add environment variables
+      - [ ] Set NEXT_PUBLIC_API_URL to Render backend URL
+      - [ ] Enable automatic deployments
+      - [ ] Configure custom domain (optional)
+      - [ ] Test production build
+      - [ ] Set up preview deployments for PRs
+      - [ ] Monitor Web Vitals in Vercel dashboard
+    </frontend_deployment_vercel>
+
+    <post_deployment>
+      - [ ] Test full user flow in production
+      - [ ] Verify all API endpoints working
+      - [ ] Check CORS configuration
+      - [ ] Test from multiple devices/browsers
+      - [ ] Monitor error rates
+      - [ ] Set up uptime monitoring (optional)
+      - [ ] Create backup strategy for database
+      - [ ] Document known issues/limitations
+      - [ ] Train initial users
+      - [ ] Gather feedback
+    </post_deployment>
+  </deployment_checklist>
+
+  <estimated_timeline>
+    Total estimated development time: 120-150 hours
+    
+    Breakdown:
+    - Backend setup and auth: 25-30 hours
+    - RAG pipeline and streaming: 20-25 hours
+    - Conversation management: 10-12 hours
+    - Frontend setup and auth: 15-20 hours
+    - Chat interface and messaging: 30-35 hours
+    - Polish and optimization: 20-28 hours
+    
+    Suggested schedule (2 developers, 40 hours/week):
+    - Week 1-2: Backend core + auth + RAG
+    - Week 3: Frontend setup + auth UI
+    - Week 4-5: Chat interface + streaming
+    - Week 6: Polish + testing + deployment
+  </estimated_timeline>
+
+  <notes>
+    <authorization_best_practices>
+      - Always filter at retrieval time (pre-filtering approach)
+      - Never rely on frontend filtering alone
+      - Log all permission denied attempts
+      - Regularly audit sop_permissions table
+      - Use database-level RLS as additional layer
+      - Clear error messages without revealing sensitive info
+    </authorization_best_practices>
+
+    <performance_tips>
+      - Use connection pooling for Supabase
+      - Cache frequently accessed SOPs list per role
+      - Implement query result caching (5-minute TTL)
+      - Use database indexes effectively
+      - Optimize vector search match_count (10-20 chunks)
+      - Compress API responses (gzip)
+      - Use CDN for frontend static assets
+    </performance_tips>
+
+    <security_reminders>
+      - NEVER expose Supabase service role key in frontend
+      - Always validate user input on backend
+      - Use prepared statements for SQL queries
+      - Implement rate limiting on auth endpoints
+      - Rotate JWT secrets periodically
+      - Monitor for suspicious activity patterns
+      - Keep dependencies updated (security patches)
+    </security_reminders>
+
+    <maintenance_tasks>
+      - Weekly: Review error logs and fix issues
+      - Monthly: Update dependencies (after testing)
+      - Monthly: Review and optimize slow queries
+      - Quarterly: Security audit and penetration testing
+      - Quarterly: User feedback review and prioritization
+      - As needed: Add new SOPs to permissions table
+      - As needed: Create new user accounts
+    </maintenance_tasks>
+  </notes>
+</project_specification>
+
