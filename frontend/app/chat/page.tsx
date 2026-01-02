@@ -14,7 +14,7 @@ export default function ChatPage() {
       const userData = sessionStorage.getItem("user");
 
       if (!accessToken || !userData) {
-        router.push("/login");
+        router.push("/login?redirect=/chat");
         return;
       }
 

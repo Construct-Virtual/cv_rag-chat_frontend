@@ -1,14 +1,24 @@
 "use client";
 
-import { useState, FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { useState, FormEvent, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [infoMessage, setInfoMessage] = useState("");
+
+  useEffect(() => {
+    // Check if user was redirected here due to authentication requirement
+    const redirect = searchParams.get("redirect");
+    if (redirect) {
+      setInfoMessage("Please sign in to continue");
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -38,8 +48,9 @@ export default function LoginPage() {
         sessionStorage.setItem("user", JSON.stringify(data.user));
       }
 
-      // Redirect to chat
-      router.push("/chat");
+      // Redirect to original destination or default to chat
+      const redirect = searchParams.get("redirect") || "/chat";
+      router.push(redirect);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
@@ -62,6 +73,13 @@ export default function LoginPage() {
 
         {/* Login Card */}
         <div className="bg-[#1A1A1A] rounded-lg p-8 border border-[#2A2A2A]">
+          {/* Info Message */}
+          {infoMessage && (
+            <div className="mb-6 bg-[#3B82F6]/10 border border-[#3B82F6]/20 rounded-lg p-3">
+              <p className="text-[#3B82F6] text-sm">{infoMessage}</p>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Username Field */}
             <div>
