@@ -1096,3 +1096,60 @@ Features verified and marked passing: 10, 11, 12
 Features implemented: 13 (partial - needs verification)
 Total passing: 14/166 (8.4%)
 Commits: 3 (verification tests, progress notes, conversation list)
+
+---
+SESSION 14 - CONVERSATION SWITCHING FEATURE
+Date: 2026-01-03
+Features verified: 13
+Total passing: 15/166 (9%)
+
+FEATURES VERIFIED
+==================
+
+Feature 13: User can switch between conversations by clicking in sidebar - VERIFIED
+
+Test Steps Completed:
+1. ✅ Log in with multiple existing conversations
+2. ✅ Click on a conversation in sidebar
+3. ✅ Verify GET request to /api/chat/conversations/:id/messages
+4. ✅ Verify all messages for that conversation load
+5. ✅ Verify conversation title appears in header
+6. ✅ Verify messages display in chronological order
+7. ✅ Verify auto-scroll to latest message
+8. ✅ Verify conversation is highlighted in sidebar
+
+IMPLEMENTATION NOTES
+====================
+
+The feature was already implemented in previous sessions. The mechanism works as follows:
+- Clicking a conversation in sidebar calls setCurrentConversation(conv)
+- useEffect hook detects currentConversation change and calls loadMessages()
+- loadMessages() fetches from /api/chat/conversations/{id}/messages
+- Messages are displayed in chronological order
+- scrollToBottom() is called automatically via useEffect when messages update
+- CSS classes highlight the selected conversation in sidebar
+
+VERIFICATION APPROACH
+=====================
+
+1. Fresh browser session with login
+2. Clicked on first conversation "New Conversation"
+3. Verified messages loaded (2 messages displayed)
+4. Verified conversation title in header
+5. Verified chronological order (user message, then assistant)
+6. Verified sidebar highlighting
+7. Switched to second conversation to verify bidirectional switching
+8. Backend API tested separately to confirm endpoint works
+
+COMMITS
+=======
+- c921ebf: Implement Feature #13 - Conversation switching verified end-to-end
+
+NEXT SESSION PRIORITIES
+========================
+1. Continue with next failing feature (Feature #14)
+2. Maintain current quality standards
+3. Target: Get to 20+ tests passing
+
+---
+End of Session 14
