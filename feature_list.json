@@ -101,7 +101,7 @@
       "Step 7: Verify response includes role",
       "Step 8: Verify response includes last_login timestamp"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",

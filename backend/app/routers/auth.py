@@ -1,9 +1,10 @@
 """Authentication router"""
-from fastapi import APIRouter, HTTPException, Response
+from fastapi import APIRouter, HTTPException, Response, Depends
 from datetime import datetime
 from app.models.auth import LoginRequest, TokenResponse, UserResponse
 from app.utils.auth import verify_password, create_access_token, create_refresh_token
 from app.utils.mock_database import mock_db
+from app.utils.dependencies import get_current_user
 
 router = APIRouter()
 
@@ -93,13 +94,19 @@ async def logout(response: Response):
 
 
 @router.get("/me", response_model=UserResponse)
-async def get_current_user():
+async def get_me(current_user: dict = Depends(get_current_user)):
     """
     Get current user information
 
     - Requires valid access token
     - Returns user profile data
     """
-    # TODO: Implement JWT token verification middleware
-    # For now, return placeholder
-    raise HTTPException(status_code=501, detail="Not implemented yet")
+    return UserResponse(
+        id=current_user["id"],
+        username=current_user["username"],
+        full_name=current_user.get("full_name"),
+        email=current_user.get("email"),
+        role=current_user["role"],
+        last_login=current_user.get("last_login"),
+        avatar_url=current_user.get("avatar_url")
+    )

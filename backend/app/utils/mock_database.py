@@ -62,6 +62,13 @@ class MockDatabase:
                 return user.copy()
         return None
 
+    def find_user_by_id(self, user_id: str) -> Optional[Dict[str, Any]]:
+        """Find user by ID"""
+        for user in self.users:
+            if user["id"] == user_id and user["is_active"]:
+                return user.copy()
+        return None
+
     def update_user_last_login(self, user_id: str) -> None:
         """Update user's last login timestamp"""
         for user in self.users:
