@@ -196,7 +196,7 @@
       "Step 8: Verify conversations are grouped by time period",
       "Step 9: Verify newest conversations appear first"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -228,7 +228,7 @@
       "Step 9: Verify success toast notification",
       "Step 10: Verify updated_at timestamp changes"
     ],
-    "passes": true
+    "passes": false
   },
   {
     "category": "functional",

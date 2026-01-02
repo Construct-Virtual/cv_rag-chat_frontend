@@ -50,7 +50,7 @@ async def create_conversation(
         raise HTTPException(status_code=500, detail=f"Failed to create conversation: {str(e)}")
 
 
-@router.get("/conversations", response_model=List[ConversationResponse])
+@router.get("/conversations", response_model=List[ConversationResponse], response_model_exclude_none=False)
 async def get_conversations(current_user: dict = Depends(get_current_user)):
     """
     Get all conversations for current user
