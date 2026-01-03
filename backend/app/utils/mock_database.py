@@ -220,6 +220,19 @@ class MockDatabase:
         conv_messages.sort(key=lambda x: x["created_at"])
         return conv_messages
 
+    def find_message_by_id(self, message_id: str) -> Optional[Dict[str, Any]]:
+        """Find a message by ID"""
+        for message in self.messages:
+            if message["id"] == message_id:
+                return message.copy()
+        return None
+
+    def delete_message(self, message_id: str) -> bool:
+        """Delete a message by ID"""
+        initial_length = len(self.messages)
+        self.messages = [m for m in self.messages if m["id"] != message_id]
+        return len(self.messages) < initial_length
+
 
 # Global mock database instance
 mock_db = MockDatabase()

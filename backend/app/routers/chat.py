@@ -461,6 +461,45 @@ async def unshare_conversation(
         raise HTTPException(status_code=500, detail=f"Failed to disable sharing: {str(e)}")
 
 
+@router.delete("/messages/{message_id}")
+async def delete_message(
+    message_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Delete a specific message
+
+    - Requires valid access token
+    - User must own the conversation containing the message
+    - Deletes the message from the database
+    """
+    try:
+        # Get message
+        message = mock_db.find_message_by_id(message_id)
+        if not message:
+            raise HTTPException(status_code=404, detail="Message not found")
+
+        # Get conversation to check ownership
+        conversation = mock_db.find_conversation_by_id(message["conversation_id"])
+        if not conversation:
+            raise HTTPException(status_code=404, detail="Conversation not found")
+
+        # Check ownership
+        if conversation["user_id"] != current_user["id"]:
+            raise HTTPException(status_code=403, detail="Access denied")
+
+        # Delete message
+        success = mock_db.delete_message(message_id)
+        if not success:
+            raise HTTPException(status_code=500, detail="Failed to delete message")
+
+        return {"message": "Message deleted successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete message: {str(e)}")
+
+
 @router.get("/shared/{share_token}", response_model=ConversationResponse)
 async def get_shared_conversation(share_token: str):
     """

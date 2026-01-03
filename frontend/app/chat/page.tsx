@@ -396,6 +396,113 @@ export default function ChatPage() {
     }
   };
 
+  const handleRegenerateResponse = async (messageId: string) => {
+    if (!currentConversation || isSending || isStreaming) {
+      return;
+    }
+
+    try {
+      // Find the message to regenerate and the user message before it
+      const messageIndex = messages.findIndex(m => m.id === messageId);
+      if (messageIndex === -1 || messages[messageIndex].role !== "assistant") {
+        return;
+      }
+
+      // Find the previous user message
+      let userMessage = null;
+      for (let i = messageIndex - 1; i >= 0; i--) {
+        if (messages[i].role === "user") {
+          userMessage = messages[i];
+          break;
+        }
+      }
+
+      if (!userMessage) {
+        showToast("Cannot regenerate: no user message found", "error");
+        return;
+      }
+
+      // Delete the assistant message
+      await apiDelete(`${process.env.NEXT_PUBLIC_API_URL}/api/chat/messages/${messageId}`);
+
+      // Remove from UI
+      setMessages(messages.filter(m => m.id !== messageId));
+
+      // Re-send the user's message
+      setIsSending(true);
+      setIsStreaming(true);
+      setStreamingContent("");
+      setStreamingSources([]);
+
+      const response = await apiPost(`${process.env.NEXT_PUBLIC_API_URL}/api/chat/query`, {
+        conversation_id: currentConversation.id,
+        message: userMessage.content
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to regenerate response");
+      }
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+
+      if (!reader) {
+        throw new Error("No response body");
+      }
+
+      let fullContent = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+
+        if (done) {
+          break;
+        }
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split("\n");
+
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            try {
+              const data = JSON.parse(line.substring(6));
+
+              if (data.type === "token") {
+                fullContent = data.full_content;
+                setStreamingContent(fullContent);
+              } else if (data.type === "complete") {
+                fullContent = data.full_content;
+                setStreamingContent("");
+                setIsStreaming(false);
+
+                if (data.sources && data.sources.length > 0) {
+                  setStreamingSources(data.sources);
+                }
+
+                await loadMessages(currentConversation.id);
+                await loadConversations();
+              } else if (data.type === "error") {
+                console.error("Streaming error:", data.message);
+                setStreamingContent("");
+                setIsStreaming(false);
+                showToast(`Error: ${data.message}`, "error");
+              }
+            } catch (err) {
+              console.error("Failed to parse SSE data:", err);
+            }
+          }
+        }
+      }
+
+      setIsSending(false);
+    } catch (err) {
+      console.error("Failed to regenerate response:", err);
+      setIsStreaming(false);
+      setIsSending(false);
+      showToast("Failed to regenerate response", "error");
+    }
+  };
+
   const handleLogout = async () => {
     try {
       await apiPost(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/logout`, {});
@@ -768,51 +875,84 @@ export default function ChatPage() {
                   </div>
                 ) : (
                   <div className="max-w-4xl mx-auto space-y-6">
-                    {messages.map((message) => (
-                      <div
-                        key={message.id}
-                        className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
-                        onMouseEnter={() => setHoveredMessageId(message.id)}
-                        onMouseLeave={() => setHoveredMessageId(null)}
-                      >
-                        <div
-                          className={`relative max-w-[80%] rounded-lg px-4 py-3 ${
-                            message.role === "user"
-                              ? "bg-[#3B82F6] text-white"
-                              : "bg-[#1A1A1A] text-[#F5F5F5] border border-[#2A2A2A]"
-                          }`}
-                        >
-                          <div className="text-xs opacity-70 mb-1">
-                            {message.role === "user" ? "You" : "AI Assistant"}
-                          </div>
-                          <div className="text-sm whitespace-pre-wrap">{message.content}</div>
+                    {messages.map((message, index) => {
+                      // Check if this is the last assistant message
+                      const isLastAssistantMessage = message.role === "assistant" &&
+                        index === messages.length - 1;
 
-                          {/* Copy button */}
-                          {hoveredMessageId === message.id && (
-                            <button
-                              onClick={() => handleCopyMessage(message.content)}
-                              className="absolute top-2 right-2 p-1.5 rounded hover:bg-[#2A2A2A] transition-colors"
-                              title="Copy to clipboard"
-                            >
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="h-4 w-4"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                                />
-                              </svg>
-                            </button>
-                          )}
+                      return (
+                        <div
+                          key={message.id}
+                          className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+                          onMouseEnter={() => setHoveredMessageId(message.id)}
+                          onMouseLeave={() => setHoveredMessageId(null)}
+                        >
+                          <div
+                            className={`relative max-w-[80%] rounded-lg px-4 py-3 ${
+                              message.role === "user"
+                                ? "bg-[#3B82F6] text-white"
+                                : "bg-[#1A1A1A] text-[#F5F5F5] border border-[#2A2A2A]"
+                            }`}
+                          >
+                            <div className="text-xs opacity-70 mb-1">
+                              {message.role === "user" ? "You" : "AI Assistant"}
+                            </div>
+                            <div className="text-sm whitespace-pre-wrap">{message.content}</div>
+
+                            {/* Action buttons on hover */}
+                            {hoveredMessageId === message.id && (
+                              <div className="absolute top-2 right-2 flex gap-1">
+                                {/* Regenerate button (only for last assistant message) */}
+                                {isLastAssistantMessage && !isStreaming && (
+                                  <button
+                                    onClick={() => handleRegenerateResponse(message.id)}
+                                    className="p-1.5 rounded hover:bg-[#2A2A2A] transition-colors"
+                                    title="Regenerate response"
+                                  >
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      className="h-4 w-4"
+                                      fill="none"
+                                      viewBox="0 0 24 24"
+                                      stroke="currentColor"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                                      />
+                                    </svg>
+                                  </button>
+                                )}
+
+                                {/* Copy button */}
+                                <button
+                                  onClick={() => handleCopyMessage(message.content)}
+                                  className="p-1.5 rounded hover:bg-[#2A2A2A] transition-colors"
+                                  title="Copy to clipboard"
+                                >
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="h-4 w-4"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                                    />
+                                  </svg>
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
 
                     {/* Streaming message */}
                     {isStreaming && streamingContent && (
