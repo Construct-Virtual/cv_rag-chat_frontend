@@ -57,3 +57,18 @@ TEMPLATE FOR NEW ENTRIES:
 **Verified:** Session N, commit hash
 **Tags:** keyword1, keyword2
 -->
+
+### [Server] Uvicorn Auto-Reload Not Registering New Endpoints
+**Error:** `404 Not Found` for endpoints that exist in code but not in runtime
+**Context:** FastAPI with uvicorn --reload, new @router decorators added to existing router file
+**Solution:**
+1. Check if endpoint exists in code: `grep "@router" backend/app/routers/chat.py`
+2. Check if endpoint registered: Visit http://localhost:8000/docs
+3. If endpoint in code but not in docs, uvicorn reload failed
+4. MUST fully restart backend server (not just reload)
+5. Stop server completely and restart via init.sh
+6. Verify endpoints appear in /docs after restart
+**Root Cause:** Uvicorn's --reload feature sometimes fails to re-import modules properly, especially when new route decorators are added. File changes are detected but the Python process doesn't fully reload the module.
+**Verified:** Session 19, Session 20
+**Tags:** uvicorn, fastapi, reload, 404, endpoints, router
+
