@@ -295,7 +295,7 @@
       "Step 9: Verify input field is disabled (read-only)",
       "Step 10: Verify no edit or delete options available"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
