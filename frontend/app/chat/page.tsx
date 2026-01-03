@@ -451,6 +451,35 @@ export default function ChatPage() {
     setShareUrl("");
   };
 
+  const handleDisableSharing = async () => {
+    if (!currentConversation) return;
+
+    try {
+      const response = await apiDelete(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/chat/conversations/${currentConversation.id}/share`
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to disable sharing");
+      }
+
+      // Update current conversation
+      setCurrentConversation({ ...currentConversation, is_shared: false, share_token: null });
+
+      // Reload conversations to update sidebar
+      await loadConversations();
+
+      // Close modal and clear share URL
+      setIsShareModalOpen(false);
+      setShareUrl("");
+
+      setToast({ message: "Sharing disabled successfully!", type: "success" });
+    } catch (err) {
+      console.error("Failed to disable sharing:", err);
+      setToast({ message: "Failed to disable sharing", type: "error" });
+    }
+  };
+
     // Filter conversations based on search query
   const filteredConversations = conversations.filter((conv) =>
     conv.title.toLowerCase().includes(searchQuery.toLowerCase())
@@ -915,7 +944,13 @@ export default function ChatPage() {
                 Copy Link
               </button>
             </div>
-            <div className="flex gap-3 justify-end">
+            <div className="flex gap-3 justify-between">
+              <button
+                onClick={handleDisableSharing}
+                className="px-4 py-2 bg-[#DC2626] hover:bg-[#B91C1C] text-white rounded-lg transition-colors"
+              >
+                Disable Sharing
+              </button>
               <button
                 onClick={handleCloseShareModal}
                 className="px-4 py-2 bg-[#2A2A2A] hover:bg-[#3A3A3A] text-[#F5F5F5] rounded-lg transition-colors"

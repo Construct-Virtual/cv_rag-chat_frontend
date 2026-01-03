@@ -311,7 +311,7 @@
       "Step 8: Verify 404 error when accessing old share URL",
       "Step 9: Verify success toast notification"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
