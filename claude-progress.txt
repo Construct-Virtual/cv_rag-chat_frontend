@@ -1493,3 +1493,86 @@ NEXT SESSION
 
 ---
 End of Session 16
+
+
+SESSION 17 PROGRESS
+===================
+Date: 2026-01-03
+
+FEATURES COMPLETED
+==================
+
+Feature #19: Shared Conversation Viewing (Public Access)
+---------------------------------------------------------
+VERIFIED - All requirements met
+
+Implementation:
+- Public endpoint: GET /api/chat/shared/:share_token
+- Public endpoint: GET /api/chat/shared/:share_token/messages
+- Frontend page: /app/shared/[share_token]/page.tsx (created in Session 16)
+
+Testing:
+- Created conversation with message
+- Shared conversation via API
+- Navigated to shared URL without authentication
+- Verified all UI elements:
+  * "Shared by Shared User" banner (blue, with share icon)
+  * Conversation title and metadata
+  * All messages visible (user + assistant)
+  * Read-only input with lock icon
+  * Explanatory text about read-only status
+  * No edit/delete/regenerate buttons
+
+API Verification:
+- GET /api/chat/shared/{token} returns conversation metadata
+- GET /api/chat/shared/{token}/messages returns message list
+- Works without authentication
+- Returns 404 for invalid tokens
+
+Feature #20: Disable Sharing
+-----------------------------
+IMPLEMENTED & TESTED
+
+Backend (already existed):
+- DELETE /api/chat/conversations/:id/share
+- Sets is_shared to false
+- Clears share_token
+- Returns 404 for old share URLs
+
+Frontend Implementation:
+- Added handleDisableSharing() function
+- Added "Disable Sharing" button to share modal
+- Red button (destructive action styling)
+- Shows success toast after disabling
+- Updates conversation state
+
+API Test Results:
+- Before: is_shared=true, has share_token
+- DELETE request: 200 OK
+- After: is_shared=false, share_token=None
+- Old share URL: 404 Not Found
+
+FILES MODIFIED
+==============
+- frontend/app/chat/page.tsx: Added disable handler + UI button
+
+COMMITS
+=======
+- c8f2b51: Verify Feature #19 - Shared conversation viewing
+- fc2934a: Implement Feature #20 - Disable sharing for conversations
+
+PROGRESS SUMMARY
+================
+- Starting: 18/166 features passing (10.8%)
+- Ending: 20/166 features passing (12.0%)
+- Features added this session: 2
+- Total commits: 2
+
+NEXT SESSION PRIORITIES
+========================
+1. Feature #21: Copy message to clipboard
+2. Feature #22: Regenerate assistant response
+3. Continue with conversation management features
+
+---
+End of Session 17
