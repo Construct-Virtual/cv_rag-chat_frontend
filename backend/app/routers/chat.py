@@ -578,26 +578,55 @@ async def regenerate_message(
                     user_role=user_role
                 )
 
-                # Step 3: Stream the response token by token
-                full_content = ""
-                for token in ai_response["tokens"]:
-                    full_content += token
-                    yield f"data: {json.dumps({'type': 'token', 'content': token, 'full_content': full_content})}\n\n"
-                    await asyncio.sleep(0.01)  # Simulate streaming delay
+                # Step 3: Get source citations
+                citations = mock_rag_service.get_source_citations(retrieved_docs)
 
-                # Step 4: Save the complete message to database
+                # Step 4: Stream the response word by word
+                words = ai_response.split()
+                full_response = ""
+
+                for i, word in enumerate(words):
+                    # Add space before word (except first)
+                    if i > 0:
+                        full_response += " "
+                    full_response += word
+
+                    # Send SSE event with the word
+                    event_data = {
+                        "type": "token",
+                        "content": word,
+                        "full_content": full_response
+                    }
+                    yield f"data: {json.dumps(event_data)}\n\n"
+
+                    # Small delay to simulate streaming
+                    await asyncio.sleep(0.05)
+
+                # Step 5: Save the complete message to database
                 assistant_message = mock_db.create_message(
                     conversation_id=conversation["id"],
                     role="assistant",
-                    content=full_content,
-                    sources=ai_response.get("sources", [])
+                    content=full_response,
+                    sources=citations
                 )
 
-                # Step 5: Send completion event with sources
-                yield f"data: {json.dumps({'type': 'complete', 'full_content': full_content, 'sources': ai_response.get('sources', [])})}\n\n"
+                # Update conversation timestamp again
+                mock_db.update_conversation(conversation["id"])
+
+                # Step 6: Send completion event with sources
+                completion_data = {
+                    "type": "complete",
+                    "message_id": assistant_message["id"],
+                    "full_content": full_response,
+                    "sources": citations
+                }
+                yield f"data: {json.dumps(completion_data)}\n\n"
 
             except Exception as e:
+                import traceback
                 error_message = f"Error generating response: {str(e)}"
+                traceback.print_exc()  # Print full traceback to logs
+                print(f"ERROR in regenerate: {error_message}")
                 yield f"data: {json.dumps({'type': 'error', 'message': error_message})}\n\n"
 
         return StreamingResponse(
