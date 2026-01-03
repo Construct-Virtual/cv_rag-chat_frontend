@@ -199,13 +199,14 @@ class MockDatabase:
         return None
 
     # Message methods
-    def create_message(self, conversation_id: str, role: str, content: str) -> Dict[str, Any]:
+    def create_message(self, conversation_id: str, role: str, content: str, sources: List[Dict[str, Any]] = None) -> Dict[str, Any]:
         """Create a new message"""
         message = {
             "id": str(uuid.uuid4()),
             "conversation_id": conversation_id,
             "role": role,
             "content": content,
+            "sources": sources if sources is not None else [],
             "created_at": datetime.utcnow().isoformat()
         }
         self.messages.append(message)

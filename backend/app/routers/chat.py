@@ -245,7 +245,8 @@ async def get_messages(
                 conversation_id=msg["conversation_id"],
                 role=msg["role"],
                 content=msg["content"],
-                created_at=msg["created_at"]
+                created_at=msg["created_at"],
+                sources=msg.get("sources", [])
             )
             for msg in messages
         ]
@@ -340,7 +341,8 @@ async def chat_query(
                 assistant_message = mock_db.create_message(
                     conversation_id=query_data.conversation_id,
                     role="assistant",
-                    content=full_response
+                    content=full_response,
+                    sources=citations
                 )
 
                 # Update conversation timestamp again
@@ -500,6 +502,114 @@ async def delete_message(
         raise HTTPException(status_code=500, detail=f"Failed to delete message: {str(e)}")
 
 
+@router.post("/messages/{message_id}/regenerate")
+async def regenerate_message(
+    message_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Regenerate an assistant message (deletes old message and creates new response)
+
+    - Requires valid access token
+    - User must own the conversation
+    - Finds the previous user message
+    - Deletes the assistant message
+    - Generates new response without creating duplicate user message
+    - Returns streaming response via SSE
+    """
+    try:
+        # Get the message to regenerate
+        print(f"DEBUG: Looking for message_id: {message_id}")
+        print(f"DEBUG: Total messages in DB: {len(mock_db.messages)}")
+        message = mock_db.find_message_by_id(message_id)
+        print(f"DEBUG: Found message: {message is not None}")
+        if not message:
+            raise HTTPException(status_code=404, detail="Message not found")
+
+        if message["role"] != "assistant":
+            raise HTTPException(status_code=400, detail="Can only regenerate assistant messages")
+
+        # Get conversation to check ownership
+        conversation = mock_db.find_conversation_by_id(message["conversation_id"])
+        if not conversation:
+            raise HTTPException(status_code=404, detail="Conversation not found")
+
+        if conversation["user_id"] != current_user["id"]:
+            raise HTTPException(status_code=403, detail="Access denied")
+
+        # Find the previous user message
+        messages = mock_db.find_messages_by_conversation(conversation["id"])
+        message_index = next((i for i, m in enumerate(messages) if m["id"] == message_id), -1)
+
+        if message_index == -1:
+            raise HTTPException(status_code=404, detail="Message not found in conversation")
+
+        user_message = None
+        for i in range(message_index - 1, -1, -1):
+            if messages[i]["role"] == "user":
+                user_message = messages[i]
+                break
+
+        if not user_message:
+            raise HTTPException(status_code=400, detail="No user message found before assistant message")
+
+        # Delete the old assistant message
+        mock_db.delete_message(message_id)
+
+        # Update conversation timestamp
+        mock_db.update_conversation(conversation["id"])
+
+        # Generate new response using the same logic as /query endpoint
+        async def generate_response():
+            try:
+                # Step 1: Retrieve relevant documents using RAG
+                user_role = current_user["role"]
+                retrieved_docs = mock_rag_service.search_documents(
+                    query=user_message["content"],
+                    user_role=user_role,
+                    top_k=3
+                )
+
+                # Step 2: Generate response using retrieved documents
+                ai_response = mock_rag_service.generate_response(
+                    query=user_message["content"],
+                    retrieved_docs=retrieved_docs,
+                    user_role=user_role
+                )
+
+                # Step 3: Stream the response token by token
+                full_content = ""
+                for token in ai_response["tokens"]:
+                    full_content += token
+                    yield f"data: {json.dumps({'type': 'token', 'content': token, 'full_content': full_content})}\n\n"
+                    await asyncio.sleep(0.01)  # Simulate streaming delay
+
+                # Step 4: Save the complete message to database
+                assistant_message = mock_db.create_message(
+                    conversation_id=conversation["id"],
+                    role="assistant",
+                    content=full_content,
+                    sources=ai_response.get("sources", [])
+                )
+
+                # Step 5: Send completion event with sources
+                yield f"data: {json.dumps({'type': 'complete', 'full_content': full_content, 'sources': ai_response.get('sources', [])})}\n\n"
+
+            except Exception as e:
+                error_message = f"Error generating response: {str(e)}"
+                yield f"data: {json.dumps({'type': 'error', 'message': error_message})}\n\n"
+
+        return StreamingResponse(
+            generate_response(),
+            media_type="text/event-stream"
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to regenerate message: {str(e)}")
+
+
 @router.get("/shared/{share_token}", response_model=ConversationResponse)
 async def get_shared_conversation(share_token: str):
     """
@@ -553,7 +663,8 @@ async def get_shared_conversation_messages(share_token: str):
                 conversation_id=msg["conversation_id"],
                 role=msg["role"],
                 content=msg["content"],
-                created_at=msg["created_at"]
+                created_at=msg["created_at"],
+                sources=msg.get("sources", [])
             )
             for msg in messages
         ]

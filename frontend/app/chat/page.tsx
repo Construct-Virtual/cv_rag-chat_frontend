@@ -402,42 +402,20 @@ export default function ChatPage() {
     }
 
     try {
-      // Find the message to regenerate and the user message before it
-      const messageIndex = messages.findIndex(m => m.id === messageId);
-      if (messageIndex === -1 || messages[messageIndex].role !== "assistant") {
-        return;
-      }
-
-      // Find the previous user message
-      let userMessage = null;
-      for (let i = messageIndex - 1; i >= 0; i--) {
-        if (messages[i].role === "user") {
-          userMessage = messages[i];
-          break;
-        }
-      }
-
-      if (!userMessage) {
-        showToast("Cannot regenerate: no user message found", "error");
-        return;
-      }
-
-      // Delete the assistant message
-      await apiDelete(`${process.env.NEXT_PUBLIC_API_URL}/api/chat/messages/${messageId}`);
-
-      // Remove from UI
+      // Remove the old message from UI optimistically
       setMessages(messages.filter(m => m.id !== messageId));
 
-      // Re-send the user's message
+      // Start streaming state
       setIsSending(true);
       setIsStreaming(true);
       setStreamingContent("");
       setStreamingSources([]);
 
-      const response = await apiPost(`${process.env.NEXT_PUBLIC_API_URL}/api/chat/query`, {
-        conversation_id: currentConversation.id,
-        message: userMessage.content
-      });
+      // Call the dedicated regenerate endpoint
+      const response = await apiPost(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/chat/messages/${messageId}/regenerate`,
+        {}
+      );
 
       if (!response.ok) {
         throw new Error("Failed to regenerate response");
@@ -500,6 +478,10 @@ export default function ChatPage() {
       setIsStreaming(false);
       setIsSending(false);
       showToast("Failed to regenerate response", "error");
+      // Reload messages to restore state if regeneration failed
+      if (currentConversation) {
+        await loadMessages(currentConversation.id);
+      }
     }
   };
 

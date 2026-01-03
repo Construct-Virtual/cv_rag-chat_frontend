@@ -42,6 +42,7 @@ class MessageResponse(BaseModel):
     role: str
     content: str
     created_at: str
+    sources: List[dict] = []
 
 
 class QueryRequest(BaseModel):
