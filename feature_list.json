@@ -326,7 +326,7 @@
       "Step 7: Paste in another application",
       "Step 8: Verify content matches original message"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
