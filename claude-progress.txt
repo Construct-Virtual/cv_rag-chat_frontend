@@ -1637,3 +1637,60 @@ NEXT SESSION PRIORITIES
 
 ---
 End of Session 18
+
+
+CONTINUED SESSION 18
+====================
+
+Feature #22: Regenerate Assistant Response (PARTIAL)
+-----------------------------------------------------
+IMPLEMENTATION COMPLETE - Testing in progress
+
+Frontend Implementation:
+- Added handleRegenerateResponse() async function (lines 399-504)
+  * Finds message to regenerate by ID
+  * Locates previous user message
+  * Deletes assistant message via API
+  * Re-sends user query with streaming
+  * Full SSE handling for new response
+  * Error handling with toast notifications
+
+UI Implementation:
+- Modified message rendering to use map with index (line 878)
+- Detect last assistant message (lines 880-881)
+- Added regenerate button in action buttons group (lines 906-927)
+- Circular arrows refresh icon (heroicons)
+- Only shows for last assistant message
+- Disabled during streaming (!isStreaming check)
+- Positioned next to copy button
+
+Backend Implementation:
+- Added DELETE /api/chat/messages/{message_id} endpoint (lines 464-500)
+  * Validates message exists
+  * Checks conversation ownership
+  * Deletes message from database
+  * Returns success/error response
+
+Database Implementation:
+- Added find_message_by_id() method (lines 223-228)
+- Added delete_message() method (lines 230-234)
+- Both required for regenerate endpoint
+
+FILES MODIFIED
+==============
+- frontend/app/chat/page.tsx: Regenerate function + UI (192 lines modified)
+- backend/app/routers/chat.py: DELETE message endpoint (+38 lines)
+- backend/app/utils/mock_database.py: Message operations (+13 lines)
+
+TESTING STATUS
+==============
+- Regenerate button appears on hover: ✅ VERIFIED
+- Button only on last assistant message: ✅ VERIFIED
+- Backend endpoint created: ✅ VERIFIED
+- Database methods added: ✅ VERIFIED
+- End-to-end regeneration: ⏳ IN PROGRESS (needs full verification)
+
+Note: Feature is functionally complete but needs full end-to-end testing
+in next session to mark as passing in feature_list.json
+
+---
