@@ -423,6 +423,20 @@ export async function apiPatch(url: string, body?: unknown, options: FetchOption
 }
 
 /**
+ * Helper function to make PUT requests
+ * @param url - API endpoint URL
+ * @param body - Request body (will be JSON stringified)
+ * @param options - Fetch options including retry configuration
+ */
+export async function apiPut(url: string, body?: unknown, options: FetchOptions = {}): Promise<Response> {
+  return apiClient(url, {
+    ...options,
+    method: 'PUT',
+    body: body ? JSON.stringify(body) : undefined,
+  });
+}
+
+/**
  * Helper function to make DELETE requests
  * @param url - API endpoint URL
  * @param options - Fetch options including retry configuration

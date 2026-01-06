@@ -17,6 +17,7 @@ export { ProtectedRoute } from './ProtectedRoute';
 export { Header } from './Header';
 export { Sidebar } from './Sidebar';
 export { ConversationItem } from './ConversationItem';
+export { SettingsModal } from './SettingsModal';
 
 // Chat components
 export { MessageList } from './MessageList';

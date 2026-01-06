@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { apiGet, apiPost, apiPatch, apiDelete } from "../utils/api";
+import { apiGet, apiPost, apiPatch, apiPut, apiDelete } from "../utils/api";
 
 // Import extracted components
 import { Markdown } from "@/components/Markdown";
@@ -567,6 +567,52 @@ export default function ChatPage() {
     router.push("/login");
   };
 
+  // Profile update handler
+  const handleProfileUpdate = async (data: { full_name?: string; email?: string }) => {
+    try {
+      const response = await apiPut(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/auth/profile`,
+        data
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || 'Failed to update profile');
+      }
+
+      const updatedUser = await response.json();
+
+      // Update user in session storage
+      sessionStorage.setItem('user', JSON.stringify(updatedUser));
+      setUser(updatedUser);
+
+      showToast('Profile updated successfully', 'success');
+    } catch (error: any) {
+      showToast(error.message || 'Failed to update profile', 'error');
+      throw error;
+    }
+  };
+
+  // Password change handler
+  const handlePasswordChange = async (data: { current_password: string; new_password: string }) => {
+    try {
+      const response = await apiPut(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/auth/password`,
+        data
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || 'Failed to change password');
+      }
+
+      showToast('Password changed successfully', 'success');
+    } catch (error: any) {
+      showToast(error.message || 'Failed to change password', 'error');
+      throw error;
+    }
+  };
+
   // Share functionality
   const handleShare = async () => {
     if (!currentConversation) return;
@@ -711,6 +757,8 @@ export default function ChatPage() {
           onNewChat={createNewConversation}
           searchQuery={searchQuery}
           onSearchChange={handleSearchChange}
+          onProfileUpdate={handleProfileUpdate}
+          onPasswordChange={handlePasswordChange}
         />
 
         {/* Main Content Area */}

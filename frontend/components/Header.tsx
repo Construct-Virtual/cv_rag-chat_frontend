@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { Button } from './Button';
+import { SettingsModal } from './SettingsModal';
 import { useThemeStore } from '@/stores/themeStore';
 
 // Accept a flexible user type for compatibility with chat page's local User interface
@@ -23,6 +24,8 @@ interface HeaderProps {
   onNewChat?: () => void;
   searchQuery?: string;
   onSearchChange?: (query: string) => void;
+  onProfileUpdate?: (data: { full_name?: string; email?: string }) => Promise<void>;
+  onPasswordChange?: (data: { current_password: string; new_password: string }) => Promise<void>;
 }
 
 // Role badge color mapping
@@ -40,8 +43,11 @@ export function Header({
   onNewChat,
   searchQuery = '',
   onSearchChange,
+  onProfileUpdate,
+  onPasswordChange,
 }: HeaderProps) {
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [localSearchQuery, setLocalSearchQuery] = useState(searchQuery);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
   const { theme, toggleTheme } = useThemeStore();
@@ -322,7 +328,7 @@ export function Header({
                       <button
                         onClick={() => {
                           setIsProfileDropdownOpen(false);
-                          // Settings action - placeholder for now
+                          setIsSettingsOpen(true);
                         }}
                         className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-theme-secondary hover:bg-theme-tertiary hover:text-theme-primary transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset"
                         role="menuitem"
@@ -413,6 +419,17 @@ export function Header({
           )}
         </div>
       </div>
+
+      {/* Settings Modal */}
+      {user && (
+        <SettingsModal
+          isOpen={isSettingsOpen}
+          onClose={() => setIsSettingsOpen(false)}
+          user={user}
+          onProfileUpdate={onProfileUpdate}
+          onPasswordChange={onPasswordChange}
+        />
+      )}
     </header>
   );
 }
