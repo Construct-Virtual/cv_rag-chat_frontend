@@ -2,6 +2,8 @@
 
 import { useState, FormEvent, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Button } from "@/components/Button";
+import { Input } from "@/components/Input";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -59,99 +61,108 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center px-6">
+    <div className="min-h-screen bg-theme-primary flex items-center justify-center px-6">
       <div className="w-full max-w-md">
         {/* Logo/Brand Area */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-semibold text-[#F5F5F5] tracking-tight mb-2">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-[#3B82F6] to-[#8B5CF6] flex items-center justify-center shadow-lg">
+            <svg width="32" height="32" fill="white" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+            </svg>
+          </div>
+          <h1 className="text-3xl font-semibold text-theme-primary tracking-tight mb-2">
             SOP AI Agent
           </h1>
-          <p className="text-[#A1A1A1] text-sm">
+          <p className="text-theme-secondary text-sm">
             Sign in to access company SOPs
           </p>
         </div>
 
         {/* Login Card */}
-        <div className="bg-[#1A1A1A] rounded-lg p-8 border border-[#2A2A2A]">
+        <div className="bg-theme-secondary rounded-xl p-8 border border-theme shadow-theme-card">
           {/* Info Message */}
           {infoMessage && (
-            <div className="mb-6 bg-[#3B82F6]/10 border border-[#3B82F6]/20 rounded-lg p-3">
-              <p className="text-[#3B82F6] text-sm">{infoMessage}</p>
+            <div className="mb-6 bg-accent-primary/10 border border-accent-primary/20 rounded-lg p-3 animate-fade-in">
+              <div className="flex items-center gap-2">
+                <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" className="text-accent-primary shrink-0" aria-hidden="true">
+                  <circle cx="8" cy="8" r="7" />
+                  <path d="M8 5v3M8 11h.01" />
+                </svg>
+                <p className="text-accent-primary text-sm">{infoMessage}</p>
+              </div>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-5" aria-label="Login form">
             {/* Username Field */}
-            <div>
-              <label
-                htmlFor="username"
-                className="block text-sm font-medium text-[#F5F5F5] mb-2"
-              >
-                Username
-              </label>
-              <input
-                id="username"
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                required
-                autoComplete="username"
-                disabled={isLoading}
-                className="w-full px-4 py-2 bg-[#2A2A2A] border border-[#2A2A2A] rounded-lg text-[#F5F5F5] placeholder-[#737373] focus:outline-none focus:ring-2 focus:ring-[#3B82F6] focus:border-transparent transition-all duration-200 disabled:opacity-50"
-                placeholder="Enter your username"
-              />
-            </div>
+            <Input
+              id="username"
+              label="Username"
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+              autoComplete="username"
+              disabled={isLoading}
+              placeholder="Enter your username"
+              className="py-2.5"
+            />
 
             {/* Password Field */}
-            <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-[#F5F5F5] mb-2"
-              >
-                Password
-              </label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                autoComplete="current-password"
-                disabled={isLoading}
-                className="w-full px-4 py-2 bg-[#2A2A2A] border border-[#2A2A2A] rounded-lg text-[#F5F5F5] placeholder-[#737373] focus:outline-none focus:ring-2 focus:ring-[#3B82F6] focus:border-transparent transition-all duration-200 disabled:opacity-50"
-                placeholder="Enter your password"
-              />
-            </div>
+            <Input
+              id="password"
+              label="Password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              autoComplete="current-password"
+              disabled={isLoading}
+              placeholder="Enter your password"
+              className="py-2.5"
+            />
 
-            {/* Error Message */}
+            {/* Error Message - F91: Accessible error announcement */}
             {error && (
-              <div className="bg-[#EF4444]/10 border border-[#EF4444]/20 rounded-lg p-3">
-                <p className="text-[#EF4444] text-sm">{error}</p>
+              <div
+                className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 animate-fade-in"
+                role="alert"
+                aria-live="assertive"
+              >
+                <div className="flex items-center gap-2">
+                  <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" className="text-red-500 shrink-0" aria-hidden="true">
+                    <circle cx="8" cy="8" r="7" />
+                    <path d="M8 5v3M8 11h.01" />
+                  </svg>
+                  <p className="text-red-500 text-sm">{error}</p>
+                </div>
               </div>
             )}
 
             {/* Submit Button */}
-            <button
+            <Button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-[#3B82F6] hover:bg-[#2563EB] text-white font-medium rounded-lg px-4 py-2.5 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2 focus:ring-offset-[#1A1A1A]"
+              isLoading={isLoading}
+              className="w-full py-2.5"
+              aria-label={isLoading ? "Signing in" : "Sign in to your account"}
             >
               {isLoading ? "Signing in..." : "Sign in"}
-            </button>
+            </Button>
           </form>
 
           {/* Development Hint */}
-          <div className="mt-6 p-4 bg-[#2A2A2A] rounded-lg">
-            <p className="text-xs text-[#A1A1A1] text-center">
-              Development credentials: <span className="text-[#F5F5F5]">admin</span> / <span className="text-[#F5F5F5]">password123</span>
+          <div className="mt-6 p-4 bg-theme-tertiary rounded-lg border border-theme">
+            <p className="text-xs text-theme-secondary text-center">
+              Development credentials: <code className="px-1.5 py-0.5 bg-theme-primary rounded text-theme-primary font-mono">admin</code> / <code className="px-1.5 py-0.5 bg-theme-primary rounded text-theme-primary font-mono">password123</code>
             </p>
           </div>
         </div>
 
         {/* Footer */}
         <div className="mt-6 text-center">
-          <p className="text-xs text-[#737373]">
-            © 2024 SOP AI Agent. All rights reserved.
+          <p className="text-xs text-theme-muted">
+            &copy; {new Date().getFullYear()} SOP AI Agent. All rights reserved.
           </p>
         </div>
       </div>

@@ -1,14 +1,105 @@
 @import "tailwindcss";
 
+/* ===== F80/F82: CSS Variables for Theme Switching ===== */
+:root {
+  /* Dark theme colors (default) */
+  --color-bg-primary: #0A0A0A;
+  --color-bg-secondary: #1A1A1A;
+  --color-bg-tertiary: #2A2A2A;
+  --color-bg-elevated: #1F1F1F;
+
+  --color-text-primary: #F5F5F5;
+  --color-text-secondary: #A1A1A1;
+  --color-text-muted: #737373;
+
+  --color-border: #2A2A2A;
+  --color-border-hover: #3A3A3A;
+
+  --color-accent-primary: #3B82F6;
+  --color-accent-hover: #2563EB;
+
+  --color-message-user: #2563EB;
+  --color-message-assistant: #1F2937;
+
+  --color-scrollbar-track: #1A1A1A;
+  --color-scrollbar-thumb: #2A2A2A;
+  --color-scrollbar-thumb-hover: rgb(55 65 81);
+
+  --color-shimmer-from: #2A2A2A;
+  --color-shimmer-via: #3A3A3A;
+
+  --color-card-shadow: rgba(0, 0, 0, 0.3);
+  --color-dropdown-shadow: rgba(0, 0, 0, 0.4);
+}
+
+/* Light theme overrides */
+:root.light, html.light {
+  --color-bg-primary: #FFFFFF;
+  --color-bg-secondary: #F9FAFB;
+  --color-bg-tertiary: #F3F4F6;
+  --color-bg-elevated: #FFFFFF;
+
+  --color-text-primary: #111827;
+  --color-text-secondary: #4B5563;  /* Darkened for better contrast (5.9:1 ratio) */
+  --color-text-muted: #6B7280;      /* Darkened for WCAG AA compliance (4.6:1 ratio) */
+
+  --color-border: #E5E7EB;
+  --color-border-hover: #D1D5DB;
+
+  --color-accent-primary: #2563EB;
+  --color-accent-hover: #1D4ED8;
+
+  --color-message-user: #2563EB;
+  --color-message-assistant: #F3F4F6;
+
+  --color-scrollbar-track: #F3F4F6;
+  --color-scrollbar-thumb: #D1D5DB;
+  --color-scrollbar-thumb-hover: #9CA3AF;
+
+  --color-shimmer-from: #E5E7EB;
+  --color-shimmer-via: #F3F4F6;
+
+  --color-card-shadow: rgba(0, 0, 0, 0.1);
+  --color-dropdown-shadow: rgba(0, 0, 0, 0.15);
+}
+
+/* ===== F82: Theme transition for smooth switching ===== */
+html {
+  transition: background-color 200ms ease-in-out, color 200ms ease-in-out;
+}
+
+html * {
+  transition: background-color 200ms ease-in-out, border-color 200ms ease-in-out, color 200ms ease-in-out;
+}
+
+/* Exclude transitions for animations that need instant response */
+html .no-theme-transition,
+html [class*="animate-"] {
+  transition: none !important;
+}
+
 @layer base {
   * {
-    border-color: #2A2A2A;
+    border-color: var(--color-border);
   }
 
   body {
-    background-color: #0A0A0A;
-    color: #F5F5F5;
-    font-family: Inter, ui-sans-serif, system-ui;
+    background-color: var(--color-bg-primary);
+    color: var(--color-text-primary);
+    font-family: var(--font-inter), Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Code elements use JetBrains Mono */
+  code, pre, .font-mono {
+    font-family: var(--font-jetbrains-mono), 'JetBrains Mono', 'Fira Code', monospace;
+  }
+
+  /* Heading styles */
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    letter-spacing: -0.025em;
   }
 
   /* Custom scrollbar */
@@ -18,16 +109,16 @@
   }
 
   ::-webkit-scrollbar-track {
-    background-color: #1A1A1A;
+    background-color: var(--color-scrollbar-track);
   }
 
   ::-webkit-scrollbar-thumb {
-    background-color: #2A2A2A;
+    background-color: var(--color-scrollbar-thumb);
     border-radius: 0.375rem;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background-color: rgb(55 65 81);
+    background-color: var(--color-scrollbar-thumb-hover);
   }
 }
 
@@ -37,7 +128,175 @@
     scroll-behavior: smooth;
   }
 
-  /* Animation utilities */
+  /* ===== F65: Sidebar collapse/expand animation ===== */
+  .sidebar-transition {
+    transition: width 200ms ease-in-out, opacity 200ms ease-in-out;
+  }
+
+  /* ===== F66: Message fade-in animation ===== */
+  .animate-message-in {
+    animation: messageFadeIn 0.3s ease-out forwards;
+  }
+
+  @keyframes messageFadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* ===== F67: Modal entrance/exit animations ===== */
+  .animate-modal-backdrop-in {
+    animation: modalBackdropIn 0.2s ease-out forwards;
+  }
+
+  .animate-modal-backdrop-out {
+    animation: modalBackdropOut 0.15s ease-in forwards;
+  }
+
+  @keyframes modalBackdropIn {
+    from {
+      opacity: 0;
+      backdrop-filter: blur(0px);
+    }
+    to {
+      opacity: 1;
+      backdrop-filter: blur(4px);
+    }
+  }
+
+  @keyframes modalBackdropOut {
+    from {
+      opacity: 1;
+      backdrop-filter: blur(4px);
+    }
+    to {
+      opacity: 0;
+      backdrop-filter: blur(0px);
+    }
+  }
+
+  .animate-modal-content-in {
+    animation: modalContentIn 0.2s ease-out forwards;
+  }
+
+  .animate-modal-content-out {
+    animation: modalContentOut 0.15s ease-in forwards;
+  }
+
+  @keyframes modalContentIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95) translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+
+  @keyframes modalContentOut {
+    from {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+    to {
+      opacity: 0;
+      transform: scale(0.95) translateY(-10px);
+    }
+  }
+
+  /* ===== F68: Toast slide-in/slide-out animations ===== */
+  .animate-toast-in {
+    animation: toastSlideIn 0.3s ease-out forwards;
+  }
+
+  .animate-toast-out {
+    animation: toastSlideOut 0.2s ease-in forwards;
+  }
+
+  @keyframes toastSlideIn {
+    from {
+      opacity: 0;
+      transform: translateX(100%);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes toastSlideOut {
+    from {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateX(100%);
+    }
+  }
+
+  /* ===== F69: Skeleton pulse animation ===== */
+  .animate-skeleton-pulse {
+    animation: skeletonPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  @keyframes skeletonPulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+
+  /* ===== F70: Typing indicator staggered bounce ===== */
+  .animate-typing-dot {
+    animation: typingBounce 1.4s infinite ease-in-out both;
+  }
+
+  .animate-typing-dot-1 {
+    animation-delay: 0s;
+  }
+
+  .animate-typing-dot-2 {
+    animation-delay: 0.16s;
+  }
+
+  .animate-typing-dot-3 {
+    animation-delay: 0.32s;
+  }
+
+  @keyframes typingBounce {
+    0%, 80%, 100% {
+      transform: translateY(0);
+      opacity: 0.4;
+    }
+    40% {
+      transform: translateY(-6px);
+      opacity: 1;
+    }
+  }
+
+  /* ===== Base animation utilities (kept for backward compatibility) ===== */
+  .animate-fade-in {
+    animation: fadeIn 0.2s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
   .animate-fade-in-up {
     animation: fadeInUp 0.3s ease-out;
   }
@@ -68,7 +327,42 @@
     }
   }
 
-  /* Typing indicator */
+  .animate-scale-in {
+    animation: scaleIn 0.2s ease-out;
+  }
+
+  @keyframes scaleIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .animate-shimmer {
+    animation: shimmer 1.5s infinite;
+    background: linear-gradient(
+      90deg,
+      var(--color-shimmer-from) 0%,
+      var(--color-shimmer-via) 50%,
+      var(--color-shimmer-from) 100%
+    );
+    background-size: 200% 100%;
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
+  }
+
+  /* Typing indicator (legacy - kept for backward compatibility) */
   .typing-indicator {
     display: inline-flex;
     gap: 4px;
@@ -96,6 +390,219 @@
     }
     40% {
       transform: scale(1);
+    }
+  }
+
+  /* ===== F72: Standard transition utilities ===== */
+  .transition-default {
+    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform;
+    transition-timing-function: ease-in-out;
+    transition-duration: 200ms;
+  }
+
+  /* ===== F80: Theme-aware utility classes ===== */
+  /* Background utilities */
+  .bg-theme-primary {
+    background-color: var(--color-bg-primary);
+  }
+  .bg-theme-secondary {
+    background-color: var(--color-bg-secondary);
+  }
+  .bg-theme-tertiary {
+    background-color: var(--color-bg-tertiary);
+  }
+  .bg-theme-elevated {
+    background-color: var(--color-bg-elevated);
+  }
+
+  /* Text utilities */
+  .text-theme-primary {
+    color: var(--color-text-primary);
+  }
+  .text-theme-secondary {
+    color: var(--color-text-secondary);
+  }
+  .text-theme-muted {
+    color: var(--color-text-muted);
+  }
+
+  /* Border utilities */
+  .border-theme {
+    border-color: var(--color-border);
+  }
+  .border-theme-hover {
+    border-color: var(--color-border-hover);
+  }
+
+  /* Shadow utilities for light theme */
+  .shadow-theme-card {
+    box-shadow: 0 4px 6px -1px var(--color-card-shadow), 0 2px 4px -2px var(--color-card-shadow);
+  }
+  .shadow-theme-dropdown {
+    box-shadow: 0 10px 15px -3px var(--color-dropdown-shadow), 0 4px 6px -4px var(--color-dropdown-shadow);
+  }
+
+  /* Message bubble colors */
+  .bg-message-user {
+    background-color: var(--color-message-user);
+  }
+  .bg-message-assistant {
+    background-color: var(--color-message-assistant);
+  }
+
+  /* Accent colors */
+  .bg-accent-primary {
+    background-color: var(--color-accent-primary);
+  }
+  .text-accent-primary {
+    color: var(--color-accent-primary);
+  }
+  .hover\:bg-accent-hover:hover {
+    background-color: var(--color-accent-hover);
+  }
+}
+
+/* ===== F80: Light theme specific overrides ===== */
+/* These handle components that need special treatment in light mode */
+html.light {
+  /* Improve code block visibility in light mode */
+  pre, code {
+    background-color: var(--color-bg-tertiary);
+  }
+
+  /* Adjust focus rings for light mode */
+  *:focus-visible {
+    outline-color: var(--color-accent-primary);
+  }
+
+  /* Light mode specific input styling */
+  input, textarea, select {
+    background-color: var(--color-bg-primary);
+    border-color: var(--color-border);
+  }
+
+  input:focus, textarea:focus, select:focus {
+    border-color: var(--color-accent-primary);
+  }
+
+  /* Light mode scrollbar */
+  ::-webkit-scrollbar-track {
+    background-color: var(--color-scrollbar-track);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: var(--color-scrollbar-thumb);
+  }
+
+  /* Light mode assistant messages need visible text */
+  .bg-message-assistant {
+    color: var(--color-text-primary);
+  }
+}
+
+/* ===== F98: Additional Animation Utilities ===== */
+@layer utilities {
+  /* Spin animation for loading indicators */
+  .animate-spin {
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  /* Pulse animation for attention-grabbing elements */
+  .animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+
+  /* Bounce animation for playful interactions */
+  .animate-bounce {
+    animation: bounce-subtle 1s infinite;
+  }
+
+  @keyframes bounce-subtle {
+    0%, 100% {
+      transform: translateY(-5%);
+      animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+    }
+    50% {
+      transform: translateY(0);
+      animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+    }
+  }
+
+  /* Fade out animation */
+  .animate-fade-out {
+    animation: fadeOut 0.2s ease-in forwards;
+  }
+
+  @keyframes fadeOut {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+
+  /* Slide in from left (for mobile sidebar) */
+  .animate-slide-in-left {
+    animation: slideInLeft 0.3s ease-out forwards;
+  }
+
+  @keyframes slideInLeft {
+    from {
+      transform: translateX(-100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  /* Slide out to left */
+  .animate-slide-out-left {
+    animation: slideOutLeft 0.3s ease-in forwards;
+  }
+
+  @keyframes slideOutLeft {
+    from {
+      transform: translateX(0);
+      opacity: 1;
+    }
+    to {
+      transform: translateX(-100%);
+      opacity: 0;
+    }
+  }
+
+  /* Cursor blink for streaming text */
+  .animate-cursor-blink {
+    animation: cursorBlink 1s step-end infinite;
+  }
+
+  @keyframes cursorBlink {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0;
     }
   }
 }
