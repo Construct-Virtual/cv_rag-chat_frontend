@@ -1,3 +1,4 @@
+
 -- SOP AI Agent Chat Interface - Initial Schema Migration
 -- This migration creates all necessary tables for the application
 
@@ -25,7 +26,7 @@ CREATE TABLE IF NOT EXISTS documents (
     id BIGSERIAL PRIMARY KEY,
     content TEXT NOT NULL,
     metadata JSONB,
-    embedding vector(3072),
+    embedding vector(1536),
     created_at TIMESTAMP DEFAULT now()
 );
 

@@ -13,8 +13,7 @@ from app.models.chat import (
     QueryRequest
 )
 from app.utils.dependencies import get_current_user
-from app.utils.mock_rag import mock_rag_service
-from app.utils.mock_database import mock_db
+from app.services import db, rag_service
 
 router = APIRouter()
 
@@ -32,12 +31,12 @@ async def create_conversation(
     - Returns conversation details
     """
     try:
-        conversation = mock_db.create_conversation(
+        conversation = db.create_conversation(
             user_id=current_user["id"],
             title=conversation_data.title
         )
 
-        message_count = mock_db.get_message_count(conversation["id"])
+        message_count = db.get_message_count(conversation["id"])
 
         return ConversationResponse(
             id=conversation["id"],
@@ -54,42 +53,52 @@ async def create_conversation(
 
 
 @router.get("/conversations", response_model=List[ConversationResponse], response_model_exclude_none=False)
-async def get_conversations(current_user: dict = Depends(get_current_user)):
+async def get_conversations(
+    current_user: dict = Depends(get_current_user),
+    limit: int = 20,
+    offset: int = 0
+):
     """
-    Get all conversations for current user
+    Get all conversations for current user with pagination
 
     - Requires valid access token
     - Returns list of conversations sorted by updated_at (newest first)
     - Includes last message preview and timestamp
+    - Supports pagination with limit and offset (default: 20 per page)
     """
+    import time
+    start_time = time.time()
+
     try:
-        conversations = mock_db.find_conversations_by_user(current_user["id"])
+        # Use optimized method that fetches everything in a single query
+        conversations_with_details = db.find_conversations_by_user_optimized(
+            user_id=current_user["id"],
+            limit=limit,
+            offset=offset
+        )
+
+        query_time = time.time() - start_time
+        print(f"[PERF] get_conversations query took {query_time:.3f}s for user {current_user['id']}")
 
         result = []
-        for conv in conversations:
-            last_message = mock_db.get_last_message(conv["id"])
-
-            # Create preview from last message (truncate to 60 chars)
-            last_message_preview = None
-            last_message_at = None
-            if last_message:
-                content = last_message["content"]
-                last_message_preview = content[:60] + "..." if len(content) > 60 else content
-                last_message_at = last_message["created_at"]
-
+        for conv in conversations_with_details:
             result.append(ConversationResponse(
                 id=conv["id"],
                 user_id=conv["user_id"],
                 title=conv["title"],
                 created_at=conv["created_at"],
                 updated_at=conv["updated_at"],
-                message_count=mock_db.get_message_count(conv["id"]),
-                last_message_preview=last_message_preview,
-                last_message_at=last_message_at
+                message_count=conv.get("message_count", 0),
+                last_message_preview=conv.get("last_message_preview"),
+                last_message_at=conv.get("last_message_at")
             ))
+
+        total_time = time.time() - start_time
+        print(f"[PERF] get_conversations total took {total_time:.3f}s, returning {len(result)} conversations")
 
         return result
     except Exception as e:
+        print(f"[ERROR] get_conversations failed: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to get conversations: {str(e)}")
 
 
@@ -106,7 +115,7 @@ async def get_conversation(
     - Returns conversation details
     """
     try:
-        conversation = mock_db.find_conversation_by_id(conversation_id)
+        conversation = db.find_conversation_by_id(conversation_id)
 
         if not conversation:
             raise HTTPException(status_code=404, detail="Conversation not found")
@@ -115,7 +124,7 @@ async def get_conversation(
         if conversation["user_id"] != current_user["id"]:
             raise HTTPException(status_code=403, detail="Access denied")
 
-        message_count = mock_db.get_message_count(conversation["id"])
+        message_count = db.get_message_count(conversation["id"])
 
         return ConversationResponse(
             id=conversation["id"],
@@ -147,7 +156,7 @@ async def update_conversation(
     - Updates conversation fields
     """
     try:
-        conversation = mock_db.find_conversation_by_id(conversation_id)
+        conversation = db.find_conversation_by_id(conversation_id)
 
         if not conversation:
             raise HTTPException(status_code=404, detail="Conversation not found")
@@ -158,12 +167,12 @@ async def update_conversation(
 
         # Update conversation
         update_dict = update_data.dict(exclude_unset=True)
-        updated_conversation = mock_db.update_conversation(conversation_id, **update_dict)
+        updated_conversation = db.update_conversation(conversation_id, **update_dict)
 
         if not updated_conversation:
             raise HTTPException(status_code=500, detail="Failed to update conversation")
 
-        message_count = mock_db.get_message_count(updated_conversation["id"])
+        message_count = db.get_message_count(updated_conversation["id"])
 
         return ConversationResponse(
             id=updated_conversation["id"],
@@ -194,7 +203,7 @@ async def delete_conversation(
     - Deletes conversation and associated messages
     """
     try:
-        conversation = mock_db.find_conversation_by_id(conversation_id)
+        conversation = db.find_conversation_by_id(conversation_id)
 
         if not conversation:
             raise HTTPException(status_code=404, detail="Conversation not found")
@@ -204,7 +213,7 @@ async def delete_conversation(
             raise HTTPException(status_code=403, detail="Access denied")
 
         # Delete conversation
-        deleted = mock_db.delete_conversation(conversation_id)
+        deleted = db.delete_conversation(conversation_id)
 
         if not deleted:
             raise HTTPException(status_code=500, detail="Failed to delete conversation")
@@ -229,7 +238,7 @@ async def get_messages(
     - Returns messages sorted by created_at (oldest first)
     """
     try:
-        conversation = mock_db.find_conversation_by_id(conversation_id)
+        conversation = db.find_conversation_by_id(conversation_id)
 
         if not conversation:
             raise HTTPException(status_code=404, detail="Conversation not found")
@@ -238,7 +247,7 @@ async def get_messages(
         if conversation["user_id"] != current_user["id"]:
             raise HTTPException(status_code=403, detail="Access denied")
 
-        messages = mock_db.find_messages_by_conversation(conversation_id)
+        messages = db.find_messages_by_conversation(conversation_id)
 
         return [
             MessageResponse(
@@ -275,7 +284,7 @@ async def chat_query(
     """
     try:
         # Verify conversation exists and user owns it
-        conversation = mock_db.find_conversation_by_id(query_data.conversation_id)
+        conversation = db.find_conversation_by_id(query_data.conversation_id)
 
         if not conversation:
             raise HTTPException(status_code=404, detail="Conversation not found")
@@ -284,35 +293,35 @@ async def chat_query(
             raise HTTPException(status_code=403, detail="Access denied")
 
         # Save user message
-        user_message = mock_db.create_message(
+        user_message = db.create_message(
             conversation_id=query_data.conversation_id,
             role="user",
             content=query_data.message
         )
 
         # Update conversation timestamp
-        mock_db.update_conversation(query_data.conversation_id)
+        db.update_conversation(query_data.conversation_id)
 
         # Define the streaming response generator
         async def generate_response():
             try:
                 # Step 1: Retrieve relevant documents using RAG
                 user_role = current_user["role"]
-                retrieved_docs = mock_rag_service.search_documents(
+                retrieved_docs = rag_service.search_documents(
                     query=query_data.message,
                     user_role=user_role,
                     top_k=3
                 )
 
                 # Step 2: Generate response using retrieved documents
-                ai_response = mock_rag_service.generate_response(
+                ai_response = rag_service.generate_response(
                     query=query_data.message,
                     retrieved_docs=retrieved_docs,
                     user_role=user_role
                 )
 
                 # Step 3: Get source citations
-                citations = mock_rag_service.get_source_citations(retrieved_docs)
+                citations = rag_service.get_source_citations(retrieved_docs)
 
                 # Use ai_response instead of mock_response
                 mock_response = ai_response
@@ -339,7 +348,7 @@ async def chat_query(
                     await asyncio.sleep(0.05)
 
                 # Save assistant message to database
-                assistant_message = mock_db.create_message(
+                assistant_message = db.create_message(
                     conversation_id=query_data.conversation_id,
                     role="assistant",
                     content=full_response,
@@ -347,7 +356,7 @@ async def chat_query(
                 )
 
                 # Update conversation timestamp again
-                mock_db.update_conversation(query_data.conversation_id)
+                db.update_conversation(query_data.conversation_id)
 
                 # Send completion event with citations
                 completion_data = {
@@ -398,7 +407,7 @@ async def share_conversation(
     """
     try:
         # Get conversation
-        conversation = mock_db.find_conversation_by_id(conversation_id)
+        conversation = db.find_conversation_by_id(conversation_id)
         if not conversation:
             raise HTTPException(status_code=404, detail="Conversation not found")
 
@@ -407,11 +416,11 @@ async def share_conversation(
             raise HTTPException(status_code=403, detail="Access denied")
 
         # Enable sharing
-        updated_conversation = mock_db.enable_conversation_sharing(conversation_id)
+        updated_conversation = db.enable_conversation_sharing(conversation_id)
         if not updated_conversation:
             raise HTTPException(status_code=500, detail="Failed to enable sharing")
 
-        message_count = mock_db.get_message_count(conversation_id)
+        message_count = db.get_message_count(conversation_id)
 
         return ConversationResponse(
             id=updated_conversation["id"],
@@ -444,7 +453,7 @@ async def unshare_conversation(
     """
     try:
         # Get conversation
-        conversation = mock_db.find_conversation_by_id(conversation_id)
+        conversation = db.find_conversation_by_id(conversation_id)
         if not conversation:
             raise HTTPException(status_code=404, detail="Conversation not found")
 
@@ -453,7 +462,7 @@ async def unshare_conversation(
             raise HTTPException(status_code=403, detail="Access denied")
 
         # Disable sharing
-        updated_conversation = mock_db.disable_conversation_sharing(conversation_id)
+        updated_conversation = db.disable_conversation_sharing(conversation_id)
         if not updated_conversation:
             raise HTTPException(status_code=500, detail="Failed to disable sharing")
 
@@ -478,12 +487,12 @@ async def delete_message(
     """
     try:
         # Get message
-        message = mock_db.find_message_by_id(message_id)
+        message = db.find_message_by_id(message_id)
         if not message:
             raise HTTPException(status_code=404, detail="Message not found")
 
         # Get conversation to check ownership
-        conversation = mock_db.find_conversation_by_id(message["conversation_id"])
+        conversation = db.find_conversation_by_id(message["conversation_id"])
         if not conversation:
             raise HTTPException(status_code=404, detail="Conversation not found")
 
@@ -492,7 +501,7 @@ async def delete_message(
             raise HTTPException(status_code=403, detail="Access denied")
 
         # Delete message
-        success = mock_db.delete_message(message_id)
+        success = db.delete_message(message_id)
         if not success:
             raise HTTPException(status_code=500, detail="Failed to delete message")
 
@@ -520,10 +529,7 @@ async def regenerate_message(
     """
     try:
         # Get the message to regenerate
-        print(f"DEBUG: Looking for message_id: {message_id}")
-        print(f"DEBUG: Total messages in DB: {len(mock_db.messages)}")
-        message = mock_db.find_message_by_id(message_id)
-        print(f"DEBUG: Found message: {message is not None}")
+        message = db.find_message_by_id(message_id)
         if not message:
             raise HTTPException(status_code=404, detail="Message not found")
 
@@ -531,7 +537,7 @@ async def regenerate_message(
             raise HTTPException(status_code=400, detail="Can only regenerate assistant messages")
 
         # Get conversation to check ownership
-        conversation = mock_db.find_conversation_by_id(message["conversation_id"])
+        conversation = db.find_conversation_by_id(message["conversation_id"])
         if not conversation:
             raise HTTPException(status_code=404, detail="Conversation not found")
 
@@ -539,7 +545,7 @@ async def regenerate_message(
             raise HTTPException(status_code=403, detail="Access denied")
 
         # Find the previous user message
-        messages = mock_db.find_messages_by_conversation(conversation["id"])
+        messages = db.find_messages_by_conversation(conversation["id"])
         message_index = next((i for i, m in enumerate(messages) if m["id"] == message_id), -1)
 
         if message_index == -1:
@@ -555,31 +561,31 @@ async def regenerate_message(
             raise HTTPException(status_code=400, detail="No user message found before assistant message")
 
         # Delete the old assistant message
-        mock_db.delete_message(message_id)
+        db.delete_message(message_id)
 
         # Update conversation timestamp
-        mock_db.update_conversation(conversation["id"])
+        db.update_conversation(conversation["id"])
 
         # Generate new response using the same logic as /query endpoint
         async def generate_response():
             try:
                 # Step 1: Retrieve relevant documents using RAG
                 user_role = current_user["role"]
-                retrieved_docs = mock_rag_service.search_documents(
+                retrieved_docs = rag_service.search_documents(
                     query=user_message["content"],
                     user_role=user_role,
                     top_k=3
                 )
 
                 # Step 2: Generate response using retrieved documents
-                ai_response = mock_rag_service.generate_response(
+                ai_response = rag_service.generate_response(
                     query=user_message["content"],
                     retrieved_docs=retrieved_docs,
                     user_role=user_role
                 )
 
                 # Step 3: Get source citations
-                citations = mock_rag_service.get_source_citations(retrieved_docs)
+                citations = rag_service.get_source_citations(retrieved_docs)
 
                 # Step 4: Stream the response word by word
                 words = ai_response.split()
@@ -603,7 +609,7 @@ async def regenerate_message(
                     await asyncio.sleep(0.05)
 
                 # Step 5: Save the complete message to database
-                assistant_message = mock_db.create_message(
+                assistant_message = db.create_message(
                     conversation_id=conversation["id"],
                     role="assistant",
                     content=full_response,
@@ -611,7 +617,7 @@ async def regenerate_message(
                 )
 
                 # Update conversation timestamp again
-                mock_db.update_conversation(conversation["id"])
+                db.update_conversation(conversation["id"])
 
                 # Step 6: Send completion event with sources
                 completion_data = {
@@ -650,11 +656,11 @@ async def get_shared_conversation(share_token: str):
     - Used for viewing shared conversations
     """
     try:
-        conversation = mock_db.find_conversation_by_share_token(share_token)
+        conversation = db.find_conversation_by_share_token(share_token)
         if not conversation:
             raise HTTPException(status_code=404, detail="Shared conversation not found or sharing has been disabled")
 
-        message_count = mock_db.get_message_count(conversation["id"])
+        message_count = db.get_message_count(conversation["id"])
 
         return ConversationResponse(
             id=conversation["id"],
@@ -681,11 +687,11 @@ async def get_shared_conversation_messages(share_token: str):
     - Returns messages if share_token is valid and is_shared is true
     """
     try:
-        conversation = mock_db.find_conversation_by_share_token(share_token)
+        conversation = db.find_conversation_by_share_token(share_token)
         if not conversation:
             raise HTTPException(status_code=404, detail="Shared conversation not found or sharing has been disabled")
 
-        messages = mock_db.find_messages_by_conversation(conversation["id"])
+        messages = db.find_messages_by_conversation(conversation["id"])
 
         return [
             MessageResponse(

@@ -3,7 +3,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import Optional
 from app.utils.auth import decode_token
-from app.utils.mock_database import mock_db
+from app.services import db
 
 security = HTTPBearer()
 
@@ -52,7 +52,7 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    user = mock_db.find_user_by_id(user_id)
+    user = db.find_user_by_id(user_id)
 
     if not user:
         raise HTTPException(

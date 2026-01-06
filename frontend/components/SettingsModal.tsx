@@ -118,7 +118,7 @@ export function SettingsModal({
   const menuItems: Array<{
     id: Section;
     label: string;
-    icon: JSX.Element;
+    icon: React.JSX.Element;
     adminOnly?: boolean;
     comingSoon?: boolean;
   }> = [

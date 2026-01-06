@@ -1,4 +1,4 @@
-"""FastAPI application entry point"""
+"""FastAPI application entry point - Updated with performance optimizations"""
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -47,12 +47,23 @@ async def health_check():
 @app.get("/api/health/db")
 async def database_health():
     """Database health check endpoint"""
+    from app.services import db
+
     try:
-        # TODO: Implement actual database connection check
-        return {
-            "status": "healthy",
-            "database": "connected"
-        }
+        if db.health_check():
+            return {
+                "status": "healthy",
+                "database": "connected"
+            }
+        else:
+            return JSONResponse(
+                status_code=503,
+                content={
+                    "status": "unhealthy",
+                    "database": "disconnected",
+                    "error": "Health check failed"
+                }
+            )
     except Exception as e:
         return JSONResponse(
             status_code=503,
@@ -65,10 +76,11 @@ async def database_health():
 
 
 # Import and include routers
-from app.routers import auth, chat
+from app.routers import auth, chat, admin
 
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(chat.router, prefix="/api/chat", tags=["chat"])
+app.include_router(admin.router, prefix="/api/admin", tags=["admin"])
 # TODO: Implement sops router
 # from app.routers import sops
 # app.include_router(sops.router, prefix="/api/sops", tags=["sops"])

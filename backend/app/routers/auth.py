@@ -2,8 +2,9 @@
 from fastapi import APIRouter, HTTPException, Response, Depends, Request
 from datetime import datetime
 from app.models.auth import LoginRequest, TokenResponse, UserResponse
-from app.utils.auth import verify_password, create_access_token, create_refresh_token, decode_token
-from app.utils.mock_database import mock_db
+from app.models.settings import UpdateProfileRequest, ChangePasswordRequest
+from app.utils.auth import verify_password, create_access_token, create_refresh_token, decode_token, hash_password
+from app.services import db
 from app.utils.dependencies import get_current_user
 
 router = APIRouter()
@@ -20,7 +21,7 @@ async def login(login_data: LoginRequest, response: Response):
     """
     try:
         # Query user by username
-        user = mock_db.find_user_by_username(login_data.username)
+        user = db.find_user_by_username(login_data.username)
 
         if not user:
             raise HTTPException(status_code=401, detail="Invalid credentials")
@@ -30,7 +31,7 @@ async def login(login_data: LoginRequest, response: Response):
             raise HTTPException(status_code=401, detail="Invalid credentials")
 
         # Update last_login
-        mock_db.update_user_last_login(user["id"])
+        db.update_user_last_login(user["id"])
         user["last_login"] = datetime.utcnow().isoformat()
 
         # Create tokens
@@ -38,7 +39,7 @@ async def login(login_data: LoginRequest, response: Response):
         refresh_token, refresh_expires = create_refresh_token(user["id"])
 
         # Store refresh token in database
-        mock_db.create_refresh_token(user["id"], refresh_token, refresh_expires)
+        db.create_refresh_token(user["id"], refresh_token, refresh_expires)
 
         # Set refresh token in httpOnly cookie
         response.set_cookie(
@@ -96,7 +97,7 @@ async def logout(response: Response):
 @router.post("/test/clear-refresh-tokens")
 async def clear_refresh_tokens():
     """Test endpoint to clear all refresh tokens"""
-    mock_db.refresh_tokens = []
+    db.refresh_tokens = []
     return {"message": "All refresh tokens cleared"}
 
 
@@ -134,11 +135,11 @@ async def refresh_token(request: Request, response: Response):
             raise HTTPException(status_code=401, detail="Invalid token payload")
 
         # Verify refresh token exists in database
-        if not mock_db.verify_refresh_token(user_id, refresh_token):
+        if not db.verify_refresh_token(user_id, refresh_token):
             raise HTTPException(status_code=401, detail="Refresh token not found or revoked")
 
         # Get user from database
-        user = mock_db.find_user_by_id(user_id)
+        user = db.find_user_by_id(user_id)
 
         if not user:
             raise HTTPException(status_code=401, detail="User not found")
@@ -174,3 +175,81 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         last_login=current_user.get("last_login"),
         avatar_url=current_user.get("avatar_url")
     )
+
+
+@router.put("/profile", response_model=UserResponse)
+async def update_profile(
+    profile_data: UpdateProfileRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Update user profile (name and email)
+
+    - Requires valid access token
+    - Updates full_name and/or email
+    - Returns updated user data
+    """
+    try:
+        updated_user = db.update_user_profile(
+            user_id=current_user["id"],
+            full_name=profile_data.full_name,
+            email=profile_data.email
+        )
+
+        if not updated_user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        return UserResponse(
+            id=updated_user["id"],
+            username=updated_user["username"],
+            full_name=updated_user.get("full_name"),
+            email=updated_user.get("email"),
+            role=updated_user["role"],
+            last_login=updated_user.get("last_login"),
+            avatar_url=updated_user.get("avatar_url")
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Profile update failed: {str(e)}")
+
+
+@router.put("/password")
+async def change_password(
+    password_data: ChangePasswordRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Change user password
+
+    - Requires valid access token
+    - Validates current password
+    - Updates to new password
+    """
+    try:
+        # Get current user from database
+        user = db.find_user_by_id(current_user["id"])
+
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        # Verify current password
+        if not verify_password(password_data.current_password, user["password_hash"]):
+            raise HTTPException(status_code=401, detail="Current password is incorrect")
+
+        # Hash new password
+        new_password_hash = hash_password(password_data.new_password)
+
+        # Update password
+        success = db.update_user_password(current_user["id"], new_password_hash)
+
+        if not success:
+            raise HTTPException(status_code=500, detail="Password update failed")
+
+        return {"message": "Password updated successfully"}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Password change failed: {str(e)}")

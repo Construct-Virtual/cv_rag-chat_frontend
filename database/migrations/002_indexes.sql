@@ -1,7 +1,8 @@
 -- SOP AI Agent Chat Interface - Indexes Migration
 -- This migration creates indexes for performance optimization
 
--- Vector search index on documents
+-- Vector search index on documents using IVFFlat
+-- Note: Using 1536 dimensions (text-embedding-3-small) to stay within pgvector limits
 CREATE INDEX IF NOT EXISTS idx_documents_embedding
 ON documents USING ivfflat (embedding vector_cosine_ops)
 WITH (lists = 100);
@@ -59,5 +60,5 @@ CREATE INDEX IF NOT EXISTS idx_messages_sources
 ON messages USING gin(sources);
 
 -- Comments
-COMMENT ON INDEX idx_documents_embedding IS 'IVFFlat index for vector similarity search';
+COMMENT ON INDEX idx_documents_embedding IS 'IVFFlat index for vector similarity search (1536 dimensions)';
 COMMENT ON INDEX idx_conversations_share_token IS 'Partial index for shared conversations only';

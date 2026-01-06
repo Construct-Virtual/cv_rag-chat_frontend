@@ -1,12 +1,13 @@
 -- Sample users for development and testing
 -- Password for all users: "password123" (hashed with bcrypt)
+-- Hash generated with: python -c "import bcrypt; print(bcrypt.hashpw(b'password123', bcrypt.gensalt()).decode())"
 -- In production, use strong passwords and hash them properly
 
 -- Admin user
-INSERT INTO users (username, password_hash, full_name, email, role, is_active)
+INSERT INTO sop_users (username, password_hash, full_name, email, role, is_active)
 VALUES (
     'admin',
-    '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5NU7x9p.TJN0e',
+    '$2b$12$ZznR9BRwEAMLVNz.S7Y01OpO6K795aMocxhd4wn9u4fHaHdDHHHaa',
     'System Administrator',
     'admin@company.com',
     'admin',
@@ -14,10 +15,10 @@ VALUES (
 ) ON CONFLICT (username) DO NOTHING;
 
 -- HR Manager
-INSERT INTO users (username, password_hash, full_name, email, role, is_active)
+INSERT INTO sop_users (username, password_hash, full_name, email, role, is_active)
 VALUES (
     'hr_manager',
-    '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5NU7x9p.TJN0e',
+    '$2b$12$ZznR9BRwEAMLVNz.S7Y01OpO6K795aMocxhd4wn9u4fHaHdDHHHaa',
     'Jane Smith',
     'jane.smith@company.com',
     'hr',
@@ -25,10 +26,10 @@ VALUES (
 ) ON CONFLICT (username) DO NOTHING;
 
 -- Finance Manager
-INSERT INTO users (username, password_hash, full_name, email, role, is_active)
+INSERT INTO sop_users (username, password_hash, full_name, email, role, is_active)
 VALUES (
     'finance_manager',
-    '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5NU7x9p.TJN0e',
+    '$2b$12$ZznR9BRwEAMLVNz.S7Y01OpO6K795aMocxhd4wn9u4fHaHdDHHHaa',
     'John Doe',
     'john.doe@company.com',
     'finance',
@@ -36,10 +37,10 @@ VALUES (
 ) ON CONFLICT (username) DO NOTHING;
 
 -- Regular Employee
-INSERT INTO users (username, password_hash, full_name, email, role, is_active)
+INSERT INTO sop_users (username, password_hash, full_name, email, role, is_active)
 VALUES (
     'employee',
-    '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5NU7x9p.TJN0e',
+    '$2b$12$ZznR9BRwEAMLVNz.S7Y01OpO6K795aMocxhd4wn9u4fHaHdDHHHaa',
     'Alice Johnson',
     'alice.johnson@company.com',
     'employee',
@@ -47,10 +48,10 @@ VALUES (
 ) ON CONFLICT (username) DO NOTHING;
 
 -- Manager
-INSERT INTO users (username, password_hash, full_name, email, role, is_active)
+INSERT INTO sop_users (username, password_hash, full_name, email, role, is_active)
 VALUES (
     'manager',
-    '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5NU7x9p.TJN0e',
+    '$2b$12$ZznR9BRwEAMLVNz.S7Y01OpO6K795aMocxhd4wn9u4fHaHdDHHHaa',
     'Bob Williams',
     'bob.williams@company.com',
     'manager',

@@ -128,13 +128,54 @@
       - Auto-scroll to latest message
     </user_interface>
 
+    <settings>
+      <!-- Settings Modal - accessible from header user dropdown -->
+      <user_settings>
+        - Profile management (edit display name, email)
+        - Password change (requires current password verification)
+        - Theme selection (Light, Dark, System auto-detect)
+        - Message density (Comfortable, Default, Compact)
+        - Code block preferences (syntax theme, line numbers toggle)
+      </user_settings>
+
+      <admin_settings>
+        <!-- Visible only to users with role === 'admin' -->
+        - User management interface (CRUD operations)
+        - Create new users with temporary password
+        - Assign roles from fixed role list
+        - Activate/deactivate user accounts
+        - Reset user passwords
+        - Search and paginate user list
+      </admin_settings>
+
+      <placeholder_settings>
+        <!-- Coming Soon - to be implemented in future -->
+        - Notifications preferences
+        - Active sessions management
+        - Keyboard shortcuts customization
+      </placeholder_settings>
+    </settings>
+
+    <roles>
+      <!-- Fixed role system - 9 predefined roles -->
+      - admin: System administrator with full access including user management
+      - manager: Team manager with elevated permissions
+      - employee: Regular employee (default role for new users)
+      - hr: HR department staff
+      - finance: Finance department staff
+      - sales: Sales team member
+      - developer: Development team member
+      - va: Virtual assistant
+      - executive: Executive leadership
+    </roles>
+
     <admin_features_future>
-      <!-- Phase 2 features - not in initial implementation -->
-      - User management interface
-      - Role creation and assignment
-      - SOP permission management
+      <!-- Phase 2+ features - not in current implementation -->
+      - SOP permission management UI
       - Analytics dashboard (query patterns, popular SOPs)
       - Feedback collection on AI responses
+      - Bulk user import/export
+      - Audit logs viewer
     </admin_features_future>
   </core_features>
 
@@ -146,7 +187,7 @@
         - password_hash (TEXT, NOT NULL) -- bcrypt hashed
         - full_name (TEXT)
         - email (TEXT, UNIQUE)
-        - role (TEXT, NOT NULL, default: 'employee') -- e.g., 'employee', 'manager', 'hr', 'finance', 'admin'
+        - role (TEXT, NOT NULL, default: 'employee') -- Fixed roles: admin, manager, employee, hr, finance, sales, developer, va, executive
         - avatar_url (TEXT)
         - is_active (BOOLEAN, default: true)
         - created_at (TIMESTAMP, default: now())
@@ -300,10 +341,62 @@
       - DELETE /api/sops/permissions/:id
     </sop_management>
 
+    <settings>
+      - PUT /api/auth/profile
+        * Headers: Authorization: Bearer {token}
+        * Body: {full_name?, email?}
+        * Returns: Updated user profile
+        * Authorization: Authenticated users can update their own profile
+
+      - PUT /api/auth/password
+        * Headers: Authorization: Bearer {token}
+        * Body: {current_password, new_password}
+        * Returns: {message: "Password updated successfully"}
+        * Authorization: Authenticated users, requires current password verification
+    </settings>
+
+    <admin_user_management>
+      <!-- All endpoints require role === 'admin' -->
+      - GET /api/admin/users
+        * Headers: Authorization: Bearer {token}
+        * Query params: ?limit=20&offset=0&search=
+        * Returns: {users: [...], total: number}
+        * Authorization: Admin only
+
+      - POST /api/admin/users
+        * Headers: Authorization: Bearer {token}
+        * Body: {username, password, full_name?, email?, role}
+        * Returns: Created user object
+        * Authorization: Admin only
+
+      - PUT /api/admin/users/:id
+        * Headers: Authorization: Bearer {token}
+        * Body: {full_name?, email?, role?}
+        * Returns: Updated user object
+        * Authorization: Admin only
+
+      - DELETE /api/admin/users/:id
+        * Headers: Authorization: Bearer {token}
+        * Returns: {message: "User deleted successfully"}
+        * Authorization: Admin only (cannot delete self)
+
+      - PUT /api/admin/users/:id/status
+        * Headers: Authorization: Bearer {token}
+        * Body: {is_active: boolean}
+        * Returns: Updated user object
+        * Authorization: Admin only (cannot deactivate self)
+
+      - POST /api/admin/users/:id/reset-password
+        * Headers: Authorization: Bearer {token}
+        * Body: {new_password}
+        * Returns: {message: "Password reset successfully"}
+        * Authorization: Admin only
+    </admin_user_management>
+
     <health_monitoring>
       - GET /api/health
         * Returns: {status: "healthy", version: "1.0.0"}
-      
+
       - GET /api/health/db
         * Returns: Database connection status
     </health_monitoring>
@@ -430,11 +523,63 @@
     <modals_overlays>
       - Confirmation dialog for delete actions
       - Share conversation modal with copy link
-      - Settings modal (theme, preferences)
       - Login modal (if session expires)
       - Error toast notifications (top-right corner)
       - Success toast notifications
     </modals_overlays>
+
+    <settings_modal>
+      <!-- XL modal with sidebar navigation -->
+      - Size: Extra large (max-w-4xl)
+      - Layout: Left sidebar (200px) + Right content area
+      - Trigger: Settings button in header user dropdown
+
+      <sidebar_navigation>
+        - Profile (user icon) - edit name, email, password
+        - Appearance (palette icon) - theme, density, code settings
+        - Divider
+        - Notifications (bell icon) - Coming Soon placeholder
+        - Sessions (monitor icon) - Coming Soon placeholder
+        - Shortcuts (keyboard icon) - Coming Soon placeholder
+        - Divider (admin only)
+        - Users (users icon) - Admin only, user management
+      </sidebar_navigation>
+
+      <profile_section>
+        - Avatar display (initials circle)
+        - Display name input (editable)
+        - Email input (editable)
+        - Role badge (read-only)
+        - Password change section:
+          * Current password input
+          * New password input
+          * Confirm password input
+        - Save/Cancel buttons
+      </profile_section>
+
+      <appearance_section>
+        - Theme selector: Light / Dark / System (three cards with icons)
+        - Message density: Radio group (Comfortable, Default, Compact)
+        - Code blocks section:
+          * Syntax theme dropdown (GitHub Dark, Monokai, etc.)
+          * Line numbers toggle checkbox
+      </appearance_section>
+
+      <user_management_section>
+        <!-- Admin only -->
+        - Add User button (opens nested modal)
+        - Search input for filtering users
+        - Users table with columns: Name, Username, Role, Status, Actions
+        - Action menu per row: Edit, Reset Password, Deactivate/Activate, Delete
+        - Pagination controls
+        - Add/Edit User form modal:
+          * Username input (required, unique)
+          * Full name input
+          * Email input
+          * Role dropdown (9 fixed roles)
+          * Password input (required for new users)
+      </user_management_section>
+    </settings_modal>
   </ui_layout>
 
   <design_system>
@@ -677,6 +822,40 @@
          c. Redirects to /login
          d. Preserves current URL for redirect after login
     </session_expiry_handling>
+
+    <settings_management>
+      1. User clicks Settings in header dropdown
+      2. Settings modal opens with Profile section active
+      3. User can:
+         - Navigate between sections via sidebar
+         - Edit profile (name, email) and save
+         - Change password (current + new + confirm)
+         - Switch theme (Light/Dark/System)
+         - Adjust message density
+         - Configure code block preferences
+      4. Admin users additionally see:
+         - Users section in sidebar
+         - Full user management capabilities
+    </settings_management>
+
+    <admin_user_management_flow>
+      1. Admin opens Settings and navigates to Users section
+      2. User list loads with search and pagination
+      3. Admin can:
+         a. Search users by name or username
+         b. Click "Add User" to create new user:
+            - Fill form with username, name, email, role, password
+            - Submit creates user with temporary password
+         c. Click action menu (•••) on any user:
+            - Edit: Opens form to update name, email, role
+            - Reset Password: Sets new temporary password
+            - Deactivate: Prevents user login (reversible)
+            - Delete: Permanently removes user (with confirmation)
+      4. Security guards:
+         - Admin cannot delete their own account
+         - Admin cannot deactivate their own account
+         - All actions require admin role verification on backend
+    </admin_user_management_flow>
   </key_interactions>
 
   <implementation_steps>
@@ -1073,6 +1252,15 @@
       - Sharing conversations works via unique link
       - All CRUD operations function without errors
       - Token refresh happens automatically
+      - Settings modal opens from header dropdown
+      - Users can update their profile (name, email)
+      - Users can change their password
+      - Theme switching works (Light/Dark/System)
+      - Appearance preferences persist across sessions
+      - Admin users can create, edit, and delete users
+      - Admin users can assign roles to users
+      - Admin users can activate/deactivate accounts
+      - Non-admin users cannot access admin features
     </functionality>
 
     <user_experience>
@@ -1108,6 +1296,9 @@
       - CORS properly configured
       - Rate limiting on auth endpoints (Phase 2)
       - Permission checks on all protected endpoints
+      - Admin endpoints require admin role verification
+      - Password change requires current password verification
+      - Admin cannot delete or deactivate their own account
       - Audit logging for security events
     </security>
 

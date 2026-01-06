@@ -1,17 +1,24 @@
 """Application configuration"""
 from pydantic_settings import BaseSettings
-from typing import List
+from typing import List, Optional
 
 
 class Settings(BaseSettings):
     """Application settings loaded from environment variables"""
 
-    # Supabase
-    supabase_url: str
-    supabase_service_role_key: str
+    # Database (Supabase production with PgBouncer pooler)
+    database_url: str = "postgresql://postgres.cfqoyzhthfmpkahlnixp:4fH%23U%2B3%2Baj4_tx%2F@aws-1-eu-west-2.pooler.supabase.com:6543/postgres"
 
     # OpenAI
     openai_api_key: str
+
+    # RAG Settings
+    embedding_model: str = "text-embedding-3-small"
+    embedding_dimensions: int = 1536
+    llm_model: str = "gpt-4o"
+    llm_temperature: float = 0.7
+    llm_max_tokens: int = 1024
+    rag_top_k: int = 5  # Number of documents to retrieve
 
     # JWT
     jwt_secret_key: str
@@ -33,7 +40,7 @@ class Settings(BaseSettings):
         return [origin.strip() for origin in self.cors_origins.split(",")]
 
     class Config:
-        env_file = ".env"
+        env_file = "../.env"  # Look in parent directory (project root)
         case_sensitive = False
 
 

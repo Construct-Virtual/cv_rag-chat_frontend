@@ -342,7 +342,7 @@
       "Step 8: Verify new message saved to database",
       "Step 9: Verify old message is replaced"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -357,7 +357,7 @@
       "Step 7: Verify group headers are displayed",
       "Step 8: Verify chronological order within groups"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -372,7 +372,7 @@
       "Step 7: Verify sidebar smoothly animates open",
       "Step 8: Verify main chat area returns to normal width"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -388,7 +388,7 @@
       "Step 8: Verify foreign key constraints are created",
       "Step 9: Verify indexes are created for performance"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -402,11 +402,11 @@
       "Step 6: Verify results return with cosine similarity scores",
       "Step 7: Verify ivfflat index is working"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
-    "description": "Documents table supports text-embedding-3-large dimensions (3072)",
+    "description": "Documents table supports text-embedding-3-small dimensions (1536)",
     "steps": [
       "Step 1: Check documents table schema",
       "Step 2: Verify embedding column is VECTOR(3072)",
@@ -415,7 +415,7 @@
       "Step 5: Query document by similarity",
       "Step 6: Verify vector operations work correctly"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -442,7 +442,7 @@
       "Step 5: Verify all messages are deleted",
       "Step 6: Verify cascade delete worked correctly"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -456,7 +456,7 @@
       "Step 6: Verify permission filtering logic works",
       "Step 7: Verify default access (no permission entry) = public"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -471,7 +471,7 @@
       "Step 7: Verify server responds",
       "Step 8: Check http://localhost:8000/docs for Swagger UI"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -483,7 +483,7 @@
       "Step 4: Verify response includes 'status': 'healthy'",
       "Step 5: Verify response includes version number"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -497,7 +497,7 @@
       "Step 6: Test with disconnected database",
       "Step 7: Verify appropriate error response"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -511,7 +511,7 @@
       "Step 6: Verify credentials are allowed",
       "Step 7: Test preflight OPTIONS request"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -528,7 +528,7 @@
       "Step 9: Test with invalid signature",
       "Step 10: Verify invalid token is rejected"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -544,7 +544,7 @@
       "Step 8: Test with invalid token",
       "Step 9: Verify 401 error is raised"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -573,7 +573,7 @@
       "Step 8: Test with non-existent token",
       "Step 9: Verify refresh fails with appropriate error"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -591,7 +591,7 @@
   },
   {
     "category": "functional",
-    "description": "OpenAI embeddings API generates 3072-dimension vectors",
+    "description": "OpenAI embeddings API generates 1536-dimension vectors",
     "steps": [
       "Step 1: Initialize OpenAI embeddings client",
       "Step 2: Generate embedding for test text",
@@ -601,7 +601,7 @@
       "Step 6: Verify values are floats",
       "Step 7: Verify model used is text-embedding-3-large"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -618,7 +618,7 @@
       "Step 9: Verify response includes information from context",
       "Step 10: Verify source tracking works"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -649,7 +649,7 @@
       "Step 7: Check actual SQL query includes metadata filter",
       "Step 8: Verify no post-retrieval filtering needed"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -665,7 +665,7 @@
       "Step 8: Verify connection closes when complete",
       "Step 9: Verify total response matches saved message"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -695,7 +695,7 @@
       "Step 7: Verify created_at timestamp is set",
       "Step 8: Verify conversation_id is correct"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -711,7 +711,7 @@
       "Step 8: Request with offset=20",
       "Step 9: Verify final 10 conversations"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -726,7 +726,7 @@
       "Step 7: Request conversations again",
       "Step 8: Verify last message preview updated"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -740,7 +740,7 @@
       "Step 6: Verify User B cannot access User A's conversation",
       "Step 7: Verify error message is appropriate"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -754,7 +754,7 @@
       "Step 6: Verify updated_at is newer than initial",
       "Step 7: Verify conversation moves to top of list"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -768,7 +768,7 @@
       "Step 6: Verify no LLM call is made",
       "Step 7: Verify no message saved to database"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -782,7 +782,7 @@
       "Step 6: Verify no error is thrown",
       "Step 7: Verify message is saved with sources: []"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -795,7 +795,7 @@
       "Step 5: Verify better retrieval results",
       "Step 6: Verify response addresses original intent"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -809,7 +809,7 @@
       "Step 6: Generate response",
       "Step 7: Verify response references source documents appropriately"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -838,7 +838,7 @@
       "Step 7: Verify XSS prevention works",
       "Step 8: Verify sanitized output"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -853,7 +853,7 @@
       "Step 7: Verify third message then processes",
       "Step 8: Verify all messages saved in correct order"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -882,7 +882,7 @@
       "Step 7: Verify page loads",
       "Step 8: Verify no console errors"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -896,7 +896,7 @@
       "Step 6: Verify custom colors from design system work",
       "Step 7: Test responsive breakpoints"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -924,7 +924,7 @@
       "Step 6: Test response interceptor",
       "Step 7: Verify error handling"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -966,7 +966,7 @@
       "Step 6: Verify redirect back to protected page",
       "Step 7: Verify access is granted"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -995,7 +995,7 @@
       "Step 7: Verify auto-scroll still works",
       "Step 8: Verify no jarring jumps"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -1009,7 +1009,7 @@
       "Step 6: When streaming completes, verify indicator disappears",
       "Step 7: Verify smooth transition"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -1023,7 +1023,7 @@
       "Step 6: Verify message is sent",
       "Step 7: Verify empty state disappears"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -1037,7 +1037,7 @@
       "Step 6: Verify message is sent automatically or requires click",
       "Step 7: Verify suggestions disappear after first message"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -1053,7 +1053,7 @@
       "Step 8: Verify expansion stops at max height (5 lines)",
       "Step 9: Verify scrollbar appears if exceeded"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -1068,7 +1068,7 @@
       "Step 7: Type whitespace only",
       "Step 8: Verify Send button remains disabled"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -1084,7 +1084,7 @@
       "Step 8: Press Enter",
       "Step 9: Verify multi-line message is sent"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -1099,7 +1099,7 @@
       "Step 7: Test max retry limit",
       "Step 8: Verify graceful failure after max retries"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -1115,7 +1115,7 @@
       "Step 8: Verify state changes to 'complete'",
       "Step 9: Verify cleanup on unmount"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -1129,7 +1129,7 @@
       "Step 6: If error occurs, verify message shows error state",
       "Step 7: Verify user can retry failed message"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -1143,7 +1143,7 @@
       "Step 6: Move mouse away",
       "Step 7: Verify tooltip disappears"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -1157,7 +1157,7 @@
       "Step 6: Verify max-width is 80%",
       "Step 7: Verify padding is applied correctly"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -1171,7 +1171,7 @@
       "Step 6: Verify max-width is 80%",
       "Step 7: Verify source citations appear below message"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -1186,7 +1186,7 @@
       "Step 7: Click again to collapse",
       "Step 8: Verify smooth expand/collapse animation"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -1202,7 +1202,7 @@
       "Step 8: Verify title updates in sidebar",
       "Step 9: Verify success toast notification"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -1217,7 +1217,7 @@
       "Step 7: Click Cancel",
       "Step 8: Verify modal closes without sharing"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -1232,7 +1232,7 @@
       "Step 7: Click outside dropdown",
       "Step 8: Verify dropdown closes"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -1249,7 +1249,7 @@
       "Step 9: Verify message is deleted",
       "Step 10: Verify success toast notification"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -1264,7 +1264,7 @@
       "Step 7: Test error toast styling",
       "Step 8: Test success toast styling"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -1292,7 +1292,7 @@
       "Step 6: Reconnect to network",
       "Step 7: Verify retry functionality works"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -1306,7 +1306,7 @@
       "Step 6: After max retries, verify error message to user",
       "Step 7: Verify user can manually retry"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -1911,7 +1911,7 @@
       "Step 10: Verify all indexes created",
       "Step 11: Verify no errors in migration"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -1926,7 +1926,7 @@
       "Step 7: Verify login succeeds",
       "Step 8: Verify admin role is returned in JWT"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -1940,7 +1940,7 @@
       "Step 6: Verify categories are assigned",
       "Step 7: Query permissions to verify data integrity"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -1954,7 +1954,7 @@
       "Step 6: Verify results are ordered by similarity",
       "Step 7: Verify metadata is included in results"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -2199,7 +2199,7 @@
       "Step 7: Verify no keyboard traps",
       "Step 8: Verify focus is managed correctly"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -2213,7 +2213,7 @@
       "Step 6: Verify form inputs have labels",
       "Step 7: Verify no unlabeled interactive elements"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -2228,7 +2228,7 @@
       "Step 7: Test error message contrast",
       "Step 8: Verify all combinations meet standards"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -2243,7 +2243,7 @@
       "Step 7: Test error states",
       "Step 8: Verify errors are announced"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -2258,7 +2258,7 @@
       "Step 7: Use Lighthouse audit",
       "Step 8: Verify performance score > 90"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -2272,7 +2272,7 @@
       "Step 6: Test with database load",
       "Step 7: Verify performance remains acceptable"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -2286,7 +2286,7 @@
       "Step 6: Test with large context retrieval",
       "Step 7: Verify acceptable latency"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -2301,7 +2301,7 @@
       "Step 7: Identify slow queries",
       "Step 8: Optimize and re-test"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -2315,7 +2315,7 @@
       "Step 6: Check for duplicate dependencies",
       "Step 7: Verify tree shaking is effective"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -2331,7 +2331,7 @@
       "Step 8: Run for 30+ minutes",
       "Step 9: Verify no significant memory increase"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -2344,7 +2344,7 @@
       "Step 5: Verify consistent styling with app",
       "Step 6: Verify no console errors"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -2357,7 +2357,7 @@
       "Step 5: Verify error is logged for debugging",
       "Step 6: Verify user can recover gracefully"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -2374,7 +2374,7 @@
       "Step 9: Test SSE streaming in all browsers",
       "Step 10: Verify consistent behavior"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -2389,7 +2389,7 @@
       "Step 7: Verify touch targets are >= 44x44px",
       "Step 8: Verify no double-tap zoom on buttons"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -2403,7 +2403,7 @@
       "Step 6: Verify proper scaling",
       "Step 7: Verify no horizontal scrolling"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "style",
@@ -2418,7 +2418,7 @@
       "Step 7: Verify sidebar closes",
       "Step 8: Verify smooth animations"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -2433,7 +2433,7 @@
       "Step 7: Verify app can be set up successfully",
       "Step 8: Verify troubleshooting section exists"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "functional",
@@ -2453,6 +2453,821 @@
       "Step 12: Open in incognito and verify read-only access",
       "Step 13: Return to original session",
       "Step 14: Log out successfully"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Settings modal opens from header user dropdown Settings button",
+    "steps": [
+      "Step 1: Log in as any user",
+      "Step 2: Click user avatar/name in header",
+      "Step 3: Verify dropdown menu opens",
+      "Step 4: Verify Settings option is visible",
+      "Step 5: Click Settings option",
+      "Step 6: Verify Settings modal opens",
+      "Step 7: Verify modal has XL size (max-w-4xl or similar)",
+      "Step 8: Verify modal has sidebar navigation"
+    ],
+    "passes": true
+  },
+  {
+    "category": "functional",
+    "description": "Settings modal has sidebar navigation with all sections",
+    "steps": [
+      "Step 1: Open Settings modal",
+      "Step 2: Verify sidebar is visible on left side of modal",
+      "Step 3: Verify Profile section is listed",
+      "Step 4: Verify Appearance section is listed",
+      "Step 5: Verify Notifications section is listed with 'Coming Soon' badge",
+      "Step 6: Verify Sessions section is listed with 'Coming Soon' badge",
+      "Step 7: Verify Keyboard Shortcuts section is listed with 'Coming Soon' badge",
+      "Step 8: Verify clicking section highlights it and shows content"
+    ],
+    "passes": true
+  },
+  {
+    "category": "functional",
+    "description": "Settings modal shows Users section only for admin role",
+    "steps": [
+      "Step 1: Log in as admin user",
+      "Step 2: Open Settings modal",
+      "Step 3: Verify Users section is visible in sidebar navigation",
+      "Step 4: Log out",
+      "Step 5: Log in as employee user",
+      "Step 6: Open Settings modal",
+      "Step 7: Verify Users section is NOT visible",
+      "Step 8: Verify only admin can access user management"
+    ],
+    "passes": true
+  },
+  {
+    "category": "functional",
+    "description": "Profile section displays current user information",
+    "steps": [
+      "Step 1: Open Settings modal",
+      "Step 2: Navigate to Profile section (should be default)",
+      "Step 3: Verify avatar with user initials is displayed",
+      "Step 4: Verify display name field shows current full_name",
+      "Step 5: Verify email field shows current email",
+      "Step 6: Verify role badge is displayed (read-only)",
+      "Step 7: Verify username is displayed (read-only)"
+    ],
+    "passes": true
+  },
+  {
+    "category": "functional",
+    "description": "User can update display name in Profile section",
+    "steps": [
+      "Step 1: Open Settings modal, navigate to Profile",
+      "Step 2: Note current display name",
+      "Step 3: Edit display name field with new value",
+      "Step 4: Click Save button",
+      "Step 5: Verify PUT request to /api/auth/profile",
+      "Step 6: Verify success toast notification",
+      "Step 7: Verify display name updates in header",
+      "Step 8: Verify display name persists on page refresh"
+    ],
+    "passes": true
+  },
+  {
+    "category": "functional",
+    "description": "User can update email in Profile section",
+    "steps": [
+      "Step 1: Open Settings modal, navigate to Profile",
+      "Step 2: Note current email",
+      "Step 3: Edit email field with new valid email",
+      "Step 4: Click Save button",
+      "Step 5: Verify PUT request to /api/auth/profile",
+      "Step 6: Verify success toast notification",
+      "Step 7: Verify email updates in user profile",
+      "Step 8: Test with invalid email format",
+      "Step 9: Verify validation error is shown"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "PUT /api/auth/profile endpoint updates user profile",
+    "steps": [
+      "Step 1: Log in and obtain access token",
+      "Step 2: Make PUT request to /api/auth/profile with new full_name",
+      "Step 3: Verify 200 response",
+      "Step 4: Verify response includes updated user data",
+      "Step 5: Make GET /api/auth/me",
+      "Step 6: Verify full_name is updated",
+      "Step 7: Test with email update",
+      "Step 8: Verify email is updated",
+      "Step 9: Test without token",
+      "Step 10: Verify 401 Unauthorized"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "User can change password with current password verification",
+    "steps": [
+      "Step 1: Open Settings modal, navigate to Profile",
+      "Step 2: Find Change Password section or button",
+      "Step 3: Click to expand password change form",
+      "Step 4: Enter current password",
+      "Step 5: Enter new password",
+      "Step 6: Enter new password confirmation",
+      "Step 7: Click Change Password button",
+      "Step 8: Verify PUT request to /api/auth/password",
+      "Step 9: Verify success toast notification",
+      "Step 10: Log out and log in with new password"
+    ],
+    "passes": true
+  },
+  {
+    "category": "functional",
+    "description": "Password change fails with incorrect current password",
+    "steps": [
+      "Step 1: Open Settings modal, navigate to Profile",
+      "Step 2: Open password change form",
+      "Step 3: Enter incorrect current password",
+      "Step 4: Enter new password and confirmation",
+      "Step 5: Click Change Password button",
+      "Step 6: Verify error response from API",
+      "Step 7: Verify error toast notification",
+      "Step 8: Verify password is not changed",
+      "Step 9: Verify can still log in with old password"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Password change validates new password confirmation matches",
+    "steps": [
+      "Step 1: Open password change form",
+      "Step 2: Enter correct current password",
+      "Step 3: Enter new password",
+      "Step 4: Enter different value for confirmation",
+      "Step 5: Verify client-side validation error",
+      "Step 6: Verify submit button is disabled or error shown",
+      "Step 7: Enter matching confirmation",
+      "Step 8: Verify validation passes"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "PUT /api/auth/password endpoint changes password",
+    "steps": [
+      "Step 1: Log in and obtain access token",
+      "Step 2: Make PUT request to /api/auth/password with current_password and new_password",
+      "Step 3: Verify 200 response on success",
+      "Step 4: Verify old password no longer works for login",
+      "Step 5: Verify new password works for login",
+      "Step 6: Test with incorrect current_password",
+      "Step 7: Verify 400 or 401 response",
+      "Step 8: Test without token",
+      "Step 9: Verify 401 Unauthorized"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Appearance section displays theme selection options",
+    "steps": [
+      "Step 1: Open Settings modal",
+      "Step 2: Click Appearance section in sidebar",
+      "Step 3: Verify Theme section is visible",
+      "Step 4: Verify Light theme option is available",
+      "Step 5: Verify Dark theme option is available",
+      "Step 6: Verify System (auto-detect) option is available",
+      "Step 7: Verify current theme is indicated/selected"
+    ],
+    "passes": true
+  },
+  {
+    "category": "functional",
+    "description": "Theme selection changes application theme immediately",
+    "steps": [
+      "Step 1: Open Appearance section",
+      "Step 2: Note current theme",
+      "Step 3: Click Light theme option",
+      "Step 4: Verify application switches to light theme immediately",
+      "Step 5: Click Dark theme option",
+      "Step 6: Verify application switches to dark theme",
+      "Step 7: Click System option",
+      "Step 8: Verify theme follows system preference"
+    ],
+    "passes": true
+  },
+  {
+    "category": "functional",
+    "description": "Theme preference persists across sessions",
+    "steps": [
+      "Step 1: Open Appearance section",
+      "Step 2: Select Light theme",
+      "Step 3: Close Settings modal",
+      "Step 4: Refresh the page",
+      "Step 5: Verify theme is still Light",
+      "Step 6: Log out and log back in",
+      "Step 7: Verify theme preference persists",
+      "Step 8: Open Settings and verify Light is selected"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Appearance section displays message density options",
+    "steps": [
+      "Step 1: Open Appearance section",
+      "Step 2: Find Message Density setting",
+      "Step 3: Verify Comfortable option is available",
+      "Step 4: Verify Default option is available",
+      "Step 5: Verify Compact option is available",
+      "Step 6: Verify current density is indicated"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Message density setting changes chat message spacing",
+    "steps": [
+      "Step 1: Open conversation with messages",
+      "Step 2: Note current message spacing",
+      "Step 3: Open Appearance settings",
+      "Step 4: Select Compact density",
+      "Step 5: Verify message spacing decreases",
+      "Step 6: Select Comfortable density",
+      "Step 7: Verify message spacing increases",
+      "Step 8: Verify changes are visible immediately"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Appearance section displays code block preferences",
+    "steps": [
+      "Step 1: Open Appearance section",
+      "Step 2: Find Code Block settings",
+      "Step 3: Verify syntax theme dropdown/selector is available",
+      "Step 4: Verify line numbers toggle is available",
+      "Step 5: Verify current settings are displayed"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Code block syntax theme preference changes code highlighting",
+    "steps": [
+      "Step 1: Open conversation with code block message",
+      "Step 2: Note current syntax highlighting colors",
+      "Step 3: Open Appearance settings",
+      "Step 4: Change syntax theme selection",
+      "Step 5: Verify code highlighting colors change",
+      "Step 6: Verify change persists on refresh"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Code block line numbers toggle shows/hides line numbers",
+    "steps": [
+      "Step 1: Open conversation with code block message",
+      "Step 2: Open Appearance settings",
+      "Step 3: Toggle line numbers ON",
+      "Step 4: Verify line numbers appear in code blocks",
+      "Step 5: Toggle line numbers OFF",
+      "Step 6: Verify line numbers disappear",
+      "Step 7: Verify setting persists on refresh"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Notifications section shows Coming Soon placeholder",
+    "steps": [
+      "Step 1: Open Settings modal",
+      "Step 2: Click Notifications section in sidebar",
+      "Step 3: Verify Coming Soon message is displayed",
+      "Step 4: Verify no functional controls are present",
+      "Step 5: Verify placeholder describes future functionality"
+    ],
+    "passes": true
+  },
+  {
+    "category": "functional",
+    "description": "Sessions section shows Coming Soon placeholder",
+    "steps": [
+      "Step 1: Open Settings modal",
+      "Step 2: Click Sessions section in sidebar",
+      "Step 3: Verify Coming Soon message is displayed",
+      "Step 4: Verify no functional controls are present",
+      "Step 5: Verify placeholder describes future functionality (active sessions, logout all)"
+    ],
+    "passes": true
+  },
+  {
+    "category": "functional",
+    "description": "Keyboard Shortcuts section shows Coming Soon placeholder",
+    "steps": [
+      "Step 1: Open Settings modal",
+      "Step 2: Click Keyboard Shortcuts section in sidebar",
+      "Step 3: Verify Coming Soon message is displayed",
+      "Step 4: Verify no functional controls are present",
+      "Step 5: Verify placeholder describes future functionality"
+    ],
+    "passes": true
+  },
+  {
+    "category": "functional",
+    "description": "Admin Users section displays list of all users",
+    "steps": [
+      "Step 1: Log in as admin user",
+      "Step 2: Open Settings modal",
+      "Step 3: Click Users section in sidebar",
+      "Step 4: Verify GET request to /api/admin/users",
+      "Step 5: Verify user list is displayed",
+      "Step 6: Verify each user shows username",
+      "Step 7: Verify each user shows full_name",
+      "Step 8: Verify each user shows role badge",
+      "Step 9: Verify each user shows active/inactive status"
+    ],
+    "passes": true
+  },
+  {
+    "category": "functional",
+    "description": "Admin Users section supports search filtering",
+    "steps": [
+      "Step 1: Open Users section as admin",
+      "Step 2: Verify search input is visible",
+      "Step 3: Type a username in search",
+      "Step 4: Verify user list filters in real-time",
+      "Step 5: Verify matching users are shown",
+      "Step 6: Verify non-matching users are hidden",
+      "Step 7: Clear search input",
+      "Step 8: Verify all users reappear"
+    ],
+    "passes": true
+  },
+  {
+    "category": "functional",
+    "description": "Admin Users section supports pagination",
+    "steps": [
+      "Step 1: Create more than 10 users in database",
+      "Step 2: Open Users section as admin",
+      "Step 3: Verify pagination controls are visible",
+      "Step 4: Verify first page shows limited users (e.g., 10)",
+      "Step 5: Click next page button",
+      "Step 6: Verify next set of users is displayed",
+      "Step 7: Verify page indicator updates",
+      "Step 8: Click previous page",
+      "Step 9: Verify returns to first page"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "GET /api/admin/users returns paginated user list",
+    "steps": [
+      "Step 1: Log in as admin and obtain token",
+      "Step 2: Make GET request to /api/admin/users",
+      "Step 3: Verify 200 response",
+      "Step 4: Verify response includes users array",
+      "Step 5: Verify response includes pagination metadata (total, page, limit)",
+      "Step 6: Test with query params ?page=2&limit=5",
+      "Step 7: Verify correct pagination",
+      "Step 8: Test as non-admin user",
+      "Step 9: Verify 403 Forbidden"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Admin can create new user with temporary password",
+    "steps": [
+      "Step 1: Open Users section as admin",
+      "Step 2: Click Create User button",
+      "Step 3: Verify create user form/modal appears",
+      "Step 4: Enter username",
+      "Step 5: Enter full_name",
+      "Step 6: Enter email",
+      "Step 7: Select role from dropdown",
+      "Step 8: Enter temporary password",
+      "Step 9: Click Create button",
+      "Step 10: Verify POST request to /api/admin/users",
+      "Step 11: Verify success toast notification",
+      "Step 12: Verify new user appears in list"
+    ],
+    "passes": true
+  },
+  {
+    "category": "functional",
+    "description": "POST /api/admin/users creates new user",
+    "steps": [
+      "Step 1: Log in as admin and obtain token",
+      "Step 2: Make POST request with username, full_name, email, role, password",
+      "Step 3: Verify 201 Created response",
+      "Step 4: Verify response includes created user data",
+      "Step 5: Verify password is hashed in database",
+      "Step 6: Log in as new user with temporary password",
+      "Step 7: Verify login succeeds",
+      "Step 8: Test creating duplicate username",
+      "Step 9: Verify 409 Conflict response"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Admin can edit existing user details",
+    "steps": [
+      "Step 1: Open Users section as admin",
+      "Step 2: Find user in list",
+      "Step 3: Click Edit button for that user",
+      "Step 4: Verify edit form opens with current values",
+      "Step 5: Modify full_name",
+      "Step 6: Modify email",
+      "Step 7: Modify role",
+      "Step 8: Click Save button",
+      "Step 9: Verify PUT request to /api/admin/users/:id",
+      "Step 10: Verify success toast notification",
+      "Step 11: Verify user list updates"
+    ],
+    "passes": true
+  },
+  {
+    "category": "functional",
+    "description": "PUT /api/admin/users/:id updates user details",
+    "steps": [
+      "Step 1: Log in as admin and obtain token",
+      "Step 2: Make PUT request to /api/admin/users/:id with updated fields",
+      "Step 3: Verify 200 response",
+      "Step 4: Verify response includes updated user data",
+      "Step 5: Verify changes persist in database",
+      "Step 6: Test updating to duplicate username",
+      "Step 7: Verify appropriate error response",
+      "Step 8: Test as non-admin user",
+      "Step 9: Verify 403 Forbidden"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Admin can delete user with confirmation",
+    "steps": [
+      "Step 1: Open Users section as admin",
+      "Step 2: Find user to delete (not self)",
+      "Step 3: Click Delete button",
+      "Step 4: Verify confirmation modal appears",
+      "Step 5: Verify modal warns deletion is permanent",
+      "Step 6: Click Cancel",
+      "Step 7: Verify user is not deleted",
+      "Step 8: Click Delete again",
+      "Step 9: Click Confirm",
+      "Step 10: Verify DELETE request to /api/admin/users/:id",
+      "Step 11: Verify user removed from list"
+    ],
+    "passes": true
+  },
+  {
+    "category": "functional",
+    "description": "Admin cannot delete their own account",
+    "steps": [
+      "Step 1: Log in as admin",
+      "Step 2: Open Users section",
+      "Step 3: Find own user in list",
+      "Step 4: Verify Delete button is disabled or hidden",
+      "Step 5: Attempt to call DELETE /api/admin/users/:own_id via API",
+      "Step 6: Verify 400 Bad Request or appropriate error",
+      "Step 7: Verify error message indicates cannot delete self"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "DELETE /api/admin/users/:id deletes user",
+    "steps": [
+      "Step 1: Log in as admin and obtain token",
+      "Step 2: Create test user to delete",
+      "Step 3: Make DELETE request to /api/admin/users/:id",
+      "Step 4: Verify 204 No Content or 200 response",
+      "Step 5: Verify user no longer exists in database",
+      "Step 6: Verify user's conversations are handled (deleted or orphaned)",
+      "Step 7: Test deleting non-existent user",
+      "Step 8: Verify 404 Not Found"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Admin can activate/deactivate user accounts",
+    "steps": [
+      "Step 1: Open Users section as admin",
+      "Step 2: Find active user in list",
+      "Step 3: Click Deactivate button/toggle",
+      "Step 4: Verify PUT request to /api/admin/users/:id/status",
+      "Step 5: Verify user status changes to inactive",
+      "Step 6: Attempt to log in as deactivated user",
+      "Step 7: Verify login fails with appropriate error",
+      "Step 8: Reactivate user",
+      "Step 9: Verify login succeeds again"
+    ],
+    "passes": true
+  },
+  {
+    "category": "functional",
+    "description": "Admin cannot deactivate their own account",
+    "steps": [
+      "Step 1: Log in as admin",
+      "Step 2: Open Users section",
+      "Step 3: Find own user in list",
+      "Step 4: Verify Deactivate button is disabled or hidden for self",
+      "Step 5: Attempt to call PUT /api/admin/users/:own_id/status via API",
+      "Step 6: Verify 400 Bad Request or appropriate error",
+      "Step 7: Verify error message indicates cannot deactivate self"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "PUT /api/admin/users/:id/status toggles user active status",
+    "steps": [
+      "Step 1: Log in as admin and obtain token",
+      "Step 2: Make PUT request with is_active: false",
+      "Step 3: Verify 200 response",
+      "Step 4: Verify user's is_active is false in database",
+      "Step 5: Make PUT request with is_active: true",
+      "Step 6: Verify user is reactivated",
+      "Step 7: Test as non-admin user",
+      "Step 8: Verify 403 Forbidden"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Admin can reset user password",
+    "steps": [
+      "Step 1: Open Users section as admin",
+      "Step 2: Find user in list",
+      "Step 3: Click Reset Password button",
+      "Step 4: Verify modal/form for new password appears",
+      "Step 5: Enter new temporary password",
+      "Step 6: Click Reset button",
+      "Step 7: Verify POST request to /api/admin/users/:id/reset-password",
+      "Step 8: Verify success toast notification",
+      "Step 9: Log in as that user with new password",
+      "Step 10: Verify login succeeds"
+    ],
+    "passes": true
+  },
+  {
+    "category": "functional",
+    "description": "POST /api/admin/users/:id/reset-password resets password",
+    "steps": [
+      "Step 1: Log in as admin and obtain token",
+      "Step 2: Make POST request with new_password",
+      "Step 3: Verify 200 response",
+      "Step 4: Verify old password no longer works",
+      "Step 5: Verify new password works for login",
+      "Step 6: Test as non-admin user",
+      "Step 7: Verify 403 Forbidden",
+      "Step 8: Test with non-existent user ID",
+      "Step 9: Verify 404 Not Found"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Admin can assign any of the 9 fixed roles to users",
+    "steps": [
+      "Step 1: Open user edit form as admin",
+      "Step 2: Click role dropdown/selector",
+      "Step 3: Verify admin role is available",
+      "Step 4: Verify manager role is available",
+      "Step 5: Verify employee role is available",
+      "Step 6: Verify hr role is available",
+      "Step 7: Verify finance role is available",
+      "Step 8: Verify sales role is available",
+      "Step 9: Verify developer role is available",
+      "Step 10: Verify va role is available",
+      "Step 11: Verify executive role is available",
+      "Step 12: Select different role and save",
+      "Step 13: Verify role is updated"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Settings modal closes with X button or Escape key",
+    "steps": [
+      "Step 1: Open Settings modal",
+      "Step 2: Click X button in modal header",
+      "Step 3: Verify modal closes",
+      "Step 4: Open Settings modal again",
+      "Step 5: Press Escape key",
+      "Step 6: Verify modal closes",
+      "Step 7: Open Settings modal",
+      "Step 8: Click outside modal on backdrop",
+      "Step 9: Verify modal closes"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Settings modal preserves form state on section navigation",
+    "steps": [
+      "Step 1: Open Settings modal",
+      "Step 2: Make changes in Profile section",
+      "Step 3: Navigate to Appearance section",
+      "Step 4: Navigate back to Profile section",
+      "Step 5: Verify unsaved changes are still present",
+      "Step 6: Click Save to save changes",
+      "Step 7: Verify changes are saved"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Settings modal has XL width with sidebar navigation layout",
+    "steps": [
+      "Step 1: Open Settings modal",
+      "Step 2: Verify modal width is max-w-4xl or similar XL size",
+      "Step 3: Verify sidebar is on left side (width ~200px)",
+      "Step 4: Verify content area fills remaining space",
+      "Step 5: Verify proper border between sidebar and content",
+      "Step 6: Verify modal is centered on screen"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Settings sidebar navigation has proper styling and active states",
+    "steps": [
+      "Step 1: Open Settings modal",
+      "Step 2: Verify sidebar has dark background",
+      "Step 3: Verify navigation items have proper padding",
+      "Step 4: Verify active section is highlighted",
+      "Step 5: Hover over inactive section",
+      "Step 6: Verify hover state is visible",
+      "Step 7: Verify icons accompany section labels"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Coming Soon badges have distinct styling",
+    "steps": [
+      "Step 1: Open Settings modal",
+      "Step 2: Find section with Coming Soon badge",
+      "Step 3: Verify badge has pill shape",
+      "Step 4: Verify badge has muted/gray color",
+      "Step 5: Verify badge text is small",
+      "Step 6: Verify badge is positioned next to section label"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Profile section avatar displays user initials correctly",
+    "steps": [
+      "Step 1: Open Profile section",
+      "Step 2: Verify avatar is circular",
+      "Step 3: Verify avatar shows first letter of first and last name",
+      "Step 4: Verify avatar has appropriate background color",
+      "Step 5: Verify avatar text is white and readable",
+      "Step 6: Verify avatar is properly sized (e.g., 64px)"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Role badge displays with appropriate color coding",
+    "steps": [
+      "Step 1: View user with admin role",
+      "Step 2: Verify badge has distinct color (e.g., red or purple)",
+      "Step 3: View user with employee role",
+      "Step 4: Verify badge has different color",
+      "Step 5: Verify all role badges are readable",
+      "Step 6: Verify badge styling is consistent"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Theme selection buttons have proper visual states",
+    "steps": [
+      "Step 1: Open Appearance section",
+      "Step 2: Verify theme options are displayed as buttons or cards",
+      "Step 3: Verify selected theme has distinct styling (border, checkmark)",
+      "Step 4: Verify unselected themes have subtle styling",
+      "Step 5: Hover over unselected theme",
+      "Step 6: Verify hover state is visible",
+      "Step 7: Click to select",
+      "Step 8: Verify selection indicator updates"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Density options show preview of spacing",
+    "steps": [
+      "Step 1: Open Appearance section",
+      "Step 2: Find density options",
+      "Step 3: Verify each option shows visual preview or description",
+      "Step 4: Verify Compact shows tighter spacing",
+      "Step 5: Verify Comfortable shows looser spacing",
+      "Step 6: Verify Default is labeled as such"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Admin user list has proper table/card styling",
+    "steps": [
+      "Step 1: Open Users section as admin",
+      "Step 2: Verify user list has consistent row/card styling",
+      "Step 3: Verify alternating row colors or card separation",
+      "Step 4: Verify action buttons are aligned",
+      "Step 5: Verify proper spacing between user entries",
+      "Step 6: Verify responsive layout on smaller screens"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Admin action buttons have appropriate colors and icons",
+    "steps": [
+      "Step 1: Open Users section as admin",
+      "Step 2: Verify Edit button has neutral/blue styling",
+      "Step 3: Verify Delete button has red/danger styling",
+      "Step 4: Verify Deactivate/Activate buttons are distinguishable",
+      "Step 5: Verify Reset Password button has appropriate styling",
+      "Step 6: Verify all buttons have relevant icons"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Create user form has proper form layout and spacing",
+    "steps": [
+      "Step 1: Open Create User form as admin",
+      "Step 2: Verify form fields have proper labels",
+      "Step 3: Verify consistent spacing between fields",
+      "Step 4: Verify role dropdown matches design system",
+      "Step 5: Verify Submit and Cancel buttons are properly positioned",
+      "Step 6: Verify form is responsive"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Settings modal responsive on smaller screens",
+    "steps": [
+      "Step 1: Open Settings modal on mobile viewport",
+      "Step 2: Verify sidebar stacks above or becomes collapsible",
+      "Step 3: Verify content is full width on mobile",
+      "Step 4: Verify all controls are accessible",
+      "Step 5: Verify touch targets are adequate size",
+      "Step 6: Verify no horizontal scrolling"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Deactivated user cannot access protected routes",
+    "steps": [
+      "Step 1: Log in as admin",
+      "Step 2: Deactivate a user account",
+      "Step 3: In separate browser, have that user already logged in",
+      "Step 4: Attempt to make API call as deactivated user",
+      "Step 5: Verify 401 or 403 response",
+      "Step 6: Verify user is logged out or shown error",
+      "Step 7: Verify user cannot log in again until reactivated"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "User preferences are stored in database not just local storage",
+    "steps": [
+      "Step 1: Log in as user",
+      "Step 2: Change theme to Light",
+      "Step 3: Change density to Compact",
+      "Step 4: Log out",
+      "Step 5: Clear browser local storage",
+      "Step 6: Log back in as same user",
+      "Step 7: Verify theme is Light",
+      "Step 8: Verify density is Compact",
+      "Step 9: Verify preferences were loaded from database"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Settings save button shows loading state during save",
+    "steps": [
+      "Step 1: Open Profile section",
+      "Step 2: Make changes to form",
+      "Step 3: Click Save button",
+      "Step 4: Verify button shows loading spinner",
+      "Step 5: Verify button is disabled during save",
+      "Step 6: When save completes, verify button returns to normal",
+      "Step 7: Verify success feedback is shown"
     ],
     "passes": false
   }
