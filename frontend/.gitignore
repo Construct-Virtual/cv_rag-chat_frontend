@@ -6,6 +6,9 @@
 
 # Testing
 /coverage
+playwright.config.ts
+test_styling.ts
+test-results/
 
 # Next.js
 /.next/
