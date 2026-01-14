@@ -726,6 +726,167 @@ class DatabaseService:
             "created_at": row["created_at"].isoformat() if row["created_at"] else None
         }
 
+    def _format_knowledge_gap(self, row: Dict) -> Dict[str, Any]:
+        """Format knowledge gap row"""
+        return {
+            "id": str(row["id"]),
+            "user_id": str(row["user_id"]),
+            "conversation_id": str(row["conversation_id"]) if row["conversation_id"] else None,
+            "query": row["query"],
+            "top_similarity_score": row["top_similarity_score"],
+            "documents_searched": row["documents_searched"],
+            "documents_below_threshold": row["documents_below_threshold"],
+            "confidence_threshold": row["confidence_threshold"],
+            "gap_type": row["gap_type"],
+            "status": row["status"],
+            "resolution_notes": row["resolution_notes"],
+            "resolved_by": str(row["resolved_by"]) if row["resolved_by"] else None,
+            "resolved_at": row["resolved_at"].isoformat() if row["resolved_at"] else None,
+            "created_at": row["created_at"].isoformat() if row["created_at"] else None,
+            "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None
+        }
+
+    # ==================== Knowledge Gap Methods ====================
+
+    def create_knowledge_gap(self, user_id: str, query: str, gap_type: str,
+                            conversation_id: Optional[str] = None,
+                            top_similarity_score: Optional[float] = None,
+                            documents_searched: int = 0,
+                            documents_below_threshold: int = 0,
+                            confidence_threshold: float = 0.75) -> Dict[str, Any]:
+        """Create a knowledge gap record"""
+        gap_id = str(uuid.uuid4())
+        now = datetime.utcnow()
+
+        with self.get_cursor() as cursor:
+            cursor.execute(
+                """
+                INSERT INTO sop_knowledge_gaps
+                (id, user_id, conversation_id, query, top_similarity_score,
+                 documents_searched, documents_below_threshold, confidence_threshold,
+                 gap_type, status, created_at, updated_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'open', %s, %s)
+                RETURNING *
+                """,
+                (gap_id, user_id, conversation_id, query, top_similarity_score,
+                 documents_searched, documents_below_threshold, confidence_threshold,
+                 gap_type, now, now)
+            )
+            row = cursor.fetchone()
+            return self._format_knowledge_gap(row)
+
+    def find_knowledge_gaps(self, status: Optional[str] = None,
+                           gap_type: Optional[str] = None,
+                           limit: int = 50, offset: int = 0) -> List[Dict[str, Any]]:
+        """Find knowledge gaps with optional filtering"""
+        conditions = []
+        params = []
+
+        if status:
+            conditions.append("status = %s")
+            params.append(status)
+
+        if gap_type:
+            conditions.append("gap_type = %s")
+            params.append(gap_type)
+
+        where_clause = "WHERE " + " AND ".join(conditions) if conditions else ""
+
+        with self.get_cursor() as cursor:
+            cursor.execute(
+                f"""
+                SELECT * FROM sop_knowledge_gaps
+                {where_clause}
+                ORDER BY created_at DESC
+                LIMIT %s OFFSET %s
+                """,
+                params + [limit, offset]
+            )
+            rows = cursor.fetchall()
+            return [self._format_knowledge_gap(row) for row in rows]
+
+    def find_knowledge_gap_by_id(self, gap_id: str) -> Optional[Dict[str, Any]]:
+        """Find knowledge gap by ID"""
+        with self.get_cursor() as cursor:
+            cursor.execute(
+                "SELECT * FROM sop_knowledge_gaps WHERE id = %s",
+                (gap_id,)
+            )
+            row = cursor.fetchone()
+            return self._format_knowledge_gap(row) if row else None
+
+    def update_gap_status(self, gap_id: str, status: str, resolved_by: str,
+                         resolution_notes: Optional[str] = None) -> Optional[Dict[str, Any]]:
+        """Update gap status (for resolving gaps)"""
+        now = datetime.utcnow()
+
+        with self.get_cursor() as cursor:
+            cursor.execute(
+                """
+                UPDATE sop_knowledge_gaps
+                SET status = %s, resolved_by = %s, resolution_notes = %s,
+                    resolved_at = %s, updated_at = %s
+                WHERE id = %s
+                RETURNING *
+                """,
+                (status, resolved_by, resolution_notes, now, now, gap_id)
+            )
+            row = cursor.fetchone()
+            return self._format_knowledge_gap(row) if row else None
+
+    def get_gap_statistics(self) -> Dict[str, Any]:
+        """Get aggregated gap statistics for dashboard"""
+        with self.get_cursor() as cursor:
+            # Total counts by status
+            cursor.execute(
+                """
+                SELECT
+                    COUNT(*) as total_gaps,
+                    COUNT(*) FILTER (WHERE status = 'open') as open_gaps,
+                    COUNT(*) FILTER (WHERE status = 'addressed') as addressed_gaps,
+                    COUNT(*) FILTER (WHERE status = 'dismissed') as dismissed_gaps,
+                    COUNT(*) FILTER (WHERE gap_type = 'no_documents') as no_documents_count,
+                    COUNT(*) FILTER (WHERE gap_type = 'low_confidence') as low_confidence_count
+                FROM sop_knowledge_gaps
+                """
+            )
+            stats = cursor.fetchone()
+
+            return {
+                "total_gaps": stats["total_gaps"],
+                "open_gaps": stats["open_gaps"],
+                "addressed_gaps": stats["addressed_gaps"],
+                "dismissed_gaps": stats["dismissed_gaps"],
+                "gaps_by_type": {
+                    "no_documents": stats["no_documents_count"],
+                    "low_confidence": stats["low_confidence_count"]
+                }
+            }
+
+    def get_top_gap_queries(self, limit: int = 10) -> List[Dict[str, Any]]:
+        """Get most common gap queries (for identifying patterns)"""
+        with self.get_cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT query, COUNT(*) as count, MAX(created_at) as last_asked
+                FROM sop_knowledge_gaps
+                WHERE status = 'open'
+                GROUP BY query
+                ORDER BY count DESC, last_asked DESC
+                LIMIT %s
+                """,
+                (limit,)
+            )
+            rows = cursor.fetchall()
+            return [
+                {
+                    "query": row["query"],
+                    "count": row["count"],
+                    "last_asked": row["last_asked"].isoformat() if row["last_asked"] else None
+                }
+                for row in rows
+            ]
+
 
 # Global database service instance
 db = DatabaseService()

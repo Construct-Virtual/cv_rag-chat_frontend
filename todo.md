@@ -796,3 +796,122 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 3. Accurate pass/fail status for each feature
 4. New tasks added to todo.md for any missing functionality
 5. Test report generated documenting findings
+
+---
+
+## Phase 19: LLM Output Styling Fixes
+
+**Goal**: Fix all markdown rendering and styling issues for LLM-generated outputs.
+
+**Status**: 22/22 tasks completed (100%) ✅
+
+### Critical Issues (Must Fix)
+
+- [x] **S1** Fix tables not rendering - Tables show as raw markdown pipe syntax instead of formatted tables
+  - Location: `frontend/components/Markdown.tsx`
+  - Fix: Added tbody, tr components; updated table styling with CSS variables
+
+- [x] **S2** Fix math formulas as plain text - LaTeX/KaTeX not processing
+  - Location: `frontend/components/Markdown.tsx`, `frontend/components/markdown/MathBlock.tsx`
+  - Fix: Fixed regex patterns in markdown-processor.ts; added rehype-katex config; added KaTeX CSS
+
+- [x] **S3** Fix headings rendering inline - H3 appears inline after sentences
+  - Location: `frontend/app/utils/markdown-processor.ts`
+  - Fix: Rewrote inline heading detection with 4 comprehensive patterns
+
+- [x] **S4** Fix inline code hardcoded dark theme colors - Illegible in light theme
+  - Location: `frontend/components/Markdown.tsx`
+  - Fix: Added --color-code-inline-bg/text CSS variables for both themes
+
+- [x] **S5** Fix list `list-inside` misalignment - Text wraps under bullet instead of aligning
+  - Location: `frontend/components/Markdown.tsx`
+  - Fix: Changed to list-outside with pl-5 padding
+
+### Major Issues (High Priority)
+
+- [x] **S6** Fix nested list indentation missing - Nested lists at same level as parent
+  - Location: `frontend/app/globals.css`
+  - Fix: Added CSS rules for ul ul, ol ol, ul ol, ol ul with margin-left: 1rem
+
+- [x] **S7** Fix blockquote styling conflicts - Blue border vs amber in CSS
+  - Location: `frontend/components/Markdown.tsx`, `frontend/app/globals.css`
+  - Fix: Added --color-blockquote-* CSS variables; unified to blue accent
+
+- [x] **S8** Fix code block horizontal overflow - Long lines may break unexpectedly
+  - Location: `frontend/components/markdown/CodeBlock.tsx`
+  - Fix: Added overflow-x-auto and whitespace-pre to Shiki content container
+
+- [x] **S9** Fix table cell word-wrap missing - Long words overflow container
+  - Location: `frontend/components/Markdown.tsx`, `frontend/app/globals.css`
+  - Fix: Added break-words class and word-break: break-word to td/th
+
+- [x] **S10** Fix KaTeX inline math no spacing - Text butts against formulas
+  - Location: `frontend/components/markdown/MathBlock.tsx`, `frontend/app/globals.css`
+  - Fix: Added mx-1 class and margin: 0 0.25rem to .katex-inline
+
+- [x] **S11** Fix streaming content not reprocessed - Different formatting than saved messages
+  - Location: `frontend/app/chat/page.tsx`
+  - Fix: Made isStreaming prop dynamic; content stays visible with full processing
+
+- [x] **S12** Fix heading/paragraph spacing inconsistent - Variable vertical rhythm
+  - Location: `frontend/components/Markdown.tsx`, `frontend/app/globals.css`
+  - Fix: Standardized margins: h1 mt-6 mb-4, h2 mt-5 mb-3, h3 mt-4 mb-2, etc.
+
+### Moderate Issues (Should Fix)
+
+- [x] **S13** Fix code block language label hardcoded colors - Not visible in light theme
+  - Location: `frontend/components/markdown/CodeBlock.tsx`
+  - Fix: Changed to text-[var(--color-text-muted)]
+
+- [x] **S14** Fix horizontal rule dark theme only - No light theme support
+  - Location: `frontend/components/Markdown.tsx`
+  - Fix: Changed to border-[var(--color-border)]
+
+- [x] **S15** Fix blockquote text color low contrast - May not meet WCAG
+  - Location: `frontend/components/Markdown.tsx`
+  - Fix: Fixed with S7 using --color-blockquote-text with proper contrast
+
+- [x] **S16** Fix table row alternation barely visible - 2% opacity too subtle
+  - Location: `frontend/app/globals.css`
+  - Fix: Increased to 5% dark theme, 4% light theme
+
+- [x] **S17** Fix link underline offset fixed - Looks wrong with variable font sizes
+  - Location: `frontend/components/Markdown.tsx`
+  - Fix: Changed to decoration-1 decoration-from-font
+
+- [x] **S18** Fix strong text uses semibold - Should use bold
+  - Location: `frontend/components/Markdown.tsx`
+  - Fix: Changed font-semibold to font-bold
+
+### Minor Issues (Nice to Have)
+
+- [x] **S19** Fix strikethrough not rendering - GFM feature not working
+  - Location: `frontend/components/Markdown.tsx`
+  - Fix: Added del component with line-through styling
+
+- [x] **S20** Fix paragraphs running together - Inadequate spacing
+  - Location: `frontend/components/Markdown.tsx`, `frontend/app/globals.css`
+  - Fix: Changed paragraph margin from mb-3 to mb-4
+
+- [x] **S21** Fix Mermaid diagram spinner not visible in light theme
+  - Location: `frontend/components/markdown/MermaidDiagram.tsx`
+  - Fix: Changed to CSS variables for bg, border, and text color
+
+- [x] **S22** Fix MathBlock error color hardcoded
+  - Location: `frontend/components/markdown/MathBlock.tsx`, `frontend/app/globals.css`
+  - Fix: Added --color-error CSS variable for both themes
+
+---
+
+### Phase 19 Notes
+
+- **Files to Modify**:
+  - `frontend/components/Markdown.tsx` - Main component with element renderers
+  - `frontend/components/markdown/CodeBlock.tsx` - Code block styling
+  - `frontend/components/markdown/MathBlock.tsx` - Math rendering
+  - `frontend/app/utils/markdown-processor.ts` - Pre-processing logic
+  - `frontend/app/globals.css` - Global styles and CSS variables
+
+- **Testing Method**: Use Playwright MCP to visually verify each fix
+- **Theme Testing**: Verify fixes work in both dark and light themes
+- **Screenshots**: Located in `.playwright-mcp/` directory for reference

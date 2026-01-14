@@ -14,6 +14,7 @@ Solutions to problems encountered during development.
 - [Skip Navigation Link](#accessibility-skip-navigation-link-implementation) - Keyboard accessibility
 - [ARIA Live Regions](#accessibility-aria-live-regions-for-dynamic-content) - Screen reader announcements
 - [Color Contrast](#accessibility-wcag-aa-color-contrast-verification) - WCAG AA compliance
+- [LLM Markdown Newlines](#frontend-llm-markdown-output-missing-newlines) - Inline headings/lists fix
 
 ---
 
@@ -232,6 +233,44 @@ class DatabaseService:
 
 **Verified:** Fix Phase 1
 **Tags:** performance, psycopg2, connection-pool, postgresql
+
+### [Frontend] LLM Markdown Output Missing Newlines
+
+**Error:** Markdown headings, lists, and code blocks render inline instead of as separate blocks
+**Context:** RAG chat with LLM (GPT-4) output rendered via react-markdown
+**Solution:**
+
+1. LLMs often output markdown without proper newlines between elements
+2. Create a post-processor (`markdown-processor.ts`) that runs regex replacements
+3. Detect inline patterns like `[.!?:;]\s+(#{1,6}\s+)` (punctuation followed by heading)
+4. Insert double newlines before headings, lists, blockquotes
+5. CRITICAL: Protect code blocks before processing to prevent `#` comments being parsed as headings:
+
+```typescript
+// Step 1: Fix code fences to be on their own lines
+processed = processed.replace(/([^\n`])(```)/g, '$1\n\n$2');
+
+// Step 2: Extract and protect code blocks
+const codeBlocks: string[] = [];
+processed = processed.replace(/```[\s\S]*?```/g, (match) => {
+  codeBlocks.push(match);
+  return '___CODE_BLOCK_' + (codeBlocks.length - 1) + '___';
+});
+
+// Step 3: Process non-code content (headings, lists, etc.)
+processed = processed.replace(/([.!?:;])\s+(#{1,6}\s+)/g, '$1\n\n$2');
+
+// Step 4: Restore code blocks
+codeBlocks.forEach((block, index) => {
+  processed = processed.replace('___CODE_BLOCK_' + index + '___', block);
+});
+```
+
+6. For streaming: Check if inside unclosed code block (odd number of ```) and skip processing
+
+**Root Cause:** LLMs prioritize semantic content over formatting. They may output `sentence. ## Heading` instead of `sentence.\n\n## Heading`.
+**Verified:** Markdown styling session
+**Tags:** markdown, react-markdown, LLM, post-processing, code-blocks
 
 ---
 

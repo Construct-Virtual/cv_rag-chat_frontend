@@ -325,6 +325,26 @@ export function Header({
 
                     {/* Menu items */}
                     <div className="py-1" role="group">
+                      <Link
+                        href="/gaps"
+                        onClick={() => setIsProfileDropdownOpen(false)}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-theme-secondary hover:bg-theme-tertiary hover:text-theme-primary transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset"
+                        role="menuitem"
+                      >
+                        <svg
+                          width="18"
+                          height="18"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          viewBox="0 0 24 24"
+                          aria-hidden="true"
+                        >
+                          <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                        </svg>
+                        Gap Analysis
+                      </Link>
+
                       <button
                         onClick={() => {
                           setIsProfileDropdownOpen(false);

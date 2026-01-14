@@ -10,6 +10,7 @@ export interface Source {
   chunk_index?: number;
   similarity_score: number;
   excerpt: string;
+  file_url?: string;
 }
 
 export interface Message {

@@ -76,11 +76,12 @@ async def database_health():
 
 
 # Import and include routers
-from app.routers import auth, chat, admin
+from app.routers import auth, chat, admin, gaps
 
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(chat.router, prefix="/api/chat", tags=["chat"])
 app.include_router(admin.router, prefix="/api/admin", tags=["admin"])
+app.include_router(gaps.router, prefix="/api/gaps", tags=["gaps"])
 # TODO: Implement sops router
 # from app.routers import sops
 # app.include_router(sops.router, prefix="/api/sops", tags=["sops"])

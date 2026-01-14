@@ -14,7 +14,8 @@ MOCK_DOCUMENTS = [
             "page_number": 1,
             "chunk_index": 0,
             "category": "HR",
-            "is_public": True
+            "is_public": True,
+            "file_url": "https://company.sharepoint.com/sites/HR/Documents/employee_onboarding.pdf"
         },
         "allowed_roles": ["admin", "hr", "manager", "employee"]  # All roles
     },
@@ -27,7 +28,8 @@ MOCK_DOCUMENTS = [
             "page_number": 1,
             "chunk_index": 0,
             "category": "HR",
-            "is_public": True
+            "is_public": True,
+            "file_url": "https://company.sharepoint.com/sites/HR/Documents/time_off_policy.pdf"
         },
         "allowed_roles": ["admin", "hr", "manager", "employee"]
     },
@@ -40,7 +42,8 @@ MOCK_DOCUMENTS = [
             "page_number": 1,
             "chunk_index": 0,
             "category": "Security",
-            "is_public": True
+            "is_public": True,
+            "file_url": "https://company.sharepoint.com/sites/Security/Documents/security_protocol.pdf"
         },
         "allowed_roles": ["admin", "hr", "manager", "employee"]
     },
@@ -53,7 +56,8 @@ MOCK_DOCUMENTS = [
             "page_number": 1,
             "chunk_index": 0,
             "category": "Operations",
-            "is_public": True
+            "is_public": True,
+            "file_url": "https://company.sharepoint.com/sites/Operations/Documents/remote_work_policy.pdf"
         },
         "allowed_roles": ["admin", "hr", "manager", "employee"]
     },
@@ -68,7 +72,8 @@ MOCK_DOCUMENTS = [
             "page_number": 1,
             "chunk_index": 0,
             "category": "HR - Confidential",
-            "is_public": False
+            "is_public": False,
+            "file_url": "https://company.sharepoint.com/sites/HR/Confidential/compensation_guidelines.pdf"
         },
         "allowed_roles": ["admin", "hr"]
     },
@@ -81,7 +86,8 @@ MOCK_DOCUMENTS = [
             "page_number": 1,
             "chunk_index": 0,
             "category": "HR - Confidential",
-            "is_public": False
+            "is_public": False,
+            "file_url": "https://company.sharepoint.com/sites/HR/Confidential/disciplinary_procedures.pdf"
         },
         "allowed_roles": ["admin", "hr"]
     },
@@ -96,7 +102,8 @@ MOCK_DOCUMENTS = [
             "page_number": 1,
             "chunk_index": 0,
             "category": "Management",
-            "is_public": False
+            "is_public": False,
+            "file_url": "https://company.sharepoint.com/sites/Management/Documents/performance_review_guide.pdf"
         },
         "allowed_roles": ["admin", "manager", "hr"]
     },
@@ -109,7 +116,8 @@ MOCK_DOCUMENTS = [
             "page_number": 1,
             "chunk_index": 0,
             "category": "Management",
-            "is_public": False
+            "is_public": False,
+            "file_url": "https://company.sharepoint.com/sites/Management/Documents/budget_approval.pdf"
         },
         "allowed_roles": ["admin", "manager"]
     },
@@ -124,7 +132,8 @@ MOCK_DOCUMENTS = [
             "page_number": 1,
             "chunk_index": 0,
             "category": "IT - Admin Only",
-            "is_public": False
+            "is_public": False,
+            "file_url": "https://company.sharepoint.com/sites/IT/Confidential/database_access_policy.pdf"
         },
         "allowed_roles": ["admin"]
     }

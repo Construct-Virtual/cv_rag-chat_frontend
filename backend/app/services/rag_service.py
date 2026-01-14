@@ -2,6 +2,7 @@
 from typing import List, Dict, Any, AsyncGenerator
 import json
 import psycopg2
+from urllib.parse import unquote
 from psycopg2.extras import RealDictCursor
 from contextlib import contextmanager
 
@@ -25,6 +26,7 @@ class RAGService:
         self.llm_temperature = settings.llm_temperature
         self.llm_max_tokens = settings.llm_max_tokens
         self.top_k = settings.rag_top_k
+        self.confidence_threshold = settings.rag_confidence_threshold
         self.database_url = settings.database_url
 
         # Initialize LangChain LLM for response generation
@@ -87,27 +89,32 @@ class RAGService:
         # Generate embedding for the query
         query_embedding = self.get_embedding(query)
 
-        # Search using pgvector
+        # Search using hybrid search: pgvector (semantic) + full-text (keyword)
         with self.get_connection() as conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                # Use cosine similarity search with role filtering
+                # Hybrid search: 70% vector similarity + 30% keyword matching
                 cursor.execute(
                     """
                     SELECT
                         d.id,
                         d.content,
                         d.metadata,
-                        1 - (d.embedding <=> %s::vector) as similarity_score
+                        1 - (d.embedding <=> %s::vector) as vector_score,
+                        ts_rank(d.search_vector, plainto_tsquery('english', %s)) as keyword_score,
+                        (0.7 * (1 - (d.embedding <=> %s::vector))) +
+                        (0.3 * COALESCE(ts_rank(d.search_vector, plainto_tsquery('english', %s)), 0)) as similarity_score
                     FROM documents d
                     WHERE d.metadata->>'allowed_roles' LIKE %s
                        OR d.metadata->>'is_public' = 'true'
-                    ORDER BY d.embedding <=> %s::vector
+                    ORDER BY similarity_score DESC
                     LIMIT %s
                     """,
                     (
                         str(query_embedding),
-                        f'%"{user_role}"%',
+                        query,
                         str(query_embedding),
+                        query,
+                        f'%"{user_role}"%',
                         top_k
                     )
                 )
@@ -127,6 +134,55 @@ class RAGService:
 
         return results
 
+    def search_documents_with_confidence(self, query: str, user_role: str, top_k: int = None) -> Dict[str, Any]:
+        """
+        Search documents with confidence threshold filtering.
+
+        Returns documents that meet the confidence threshold plus metadata about gaps.
+
+        Args:
+            query: User's search query
+            user_role: Current user's role for permission filtering
+            top_k: Number of results to return (defaults to config setting)
+
+        Returns:
+            Dict with:
+            - passing_docs: Documents meeting confidence threshold
+            - filtered_docs: Documents below threshold (for gap analysis)
+            - has_gap: True if no documents meet threshold
+            - top_score: Highest similarity score found
+        """
+        # Get all matching documents first
+        all_docs = self.search_documents(query, user_role, top_k)
+
+        # Split by confidence threshold
+        passing_docs = []
+        filtered_docs = []
+        top_score = 0.0
+
+        for doc in all_docs:
+            score = doc.get("similarity_score", 0.0)
+            top_score = max(top_score, score)
+
+            if score >= self.confidence_threshold:
+                passing_docs.append(doc)
+            else:
+                filtered_docs.append(doc)
+
+        result = {
+            "passing_docs": passing_docs,
+            "filtered_docs": filtered_docs,
+            "has_gap": len(passing_docs) == 0,
+            "top_score": top_score,
+            "documents_searched": len(all_docs),
+            "threshold": self.confidence_threshold
+        }
+
+        # Log search results for debugging
+        print(f"[RAG] Search: {len(all_docs)} docs found, {len(passing_docs)} passed threshold ({self.confidence_threshold}), top_score: {top_score:.3f}, has_gap: {result['has_gap']}")
+
+        return result
+
     def generate_response(self, query: str, retrieved_docs: List[Dict[str, Any]], user_role: str) -> str:
         """
         Generate AI response using retrieved documents as context
@@ -140,32 +196,49 @@ class RAGService:
             Generated response text
         """
         if not retrieved_docs:
+            print(f"[RAG] No documents provided to generate_response for query: {query[:50]}...")
             return self._no_documents_response(query, user_role)
+
+        # Log document scores for debugging
+        scores = [doc.get("similarity_score", 0) for doc in retrieved_docs]
+        print(f"[RAG] Generating response with {len(retrieved_docs)} docs, scores: {scores}")
 
         # Build context from retrieved documents
         context_parts = []
         for i, doc in enumerate(retrieved_docs, 1):
-            display_name = doc.get("metadata", {}).get("display_name", f"Document {i}")
+            file_name = doc.get("metadata", {}).get("file_name", f"Document {i}")
             context_parts.append(
-                f"[Source {i}: {display_name}]\n{doc['content']}\n"
+                f"[Source {i}: {file_name}]\n{doc['content']}\n"
             )
 
         context = "\n".join(context_parts)
 
         # Create messages for the LLM
-        system_prompt = """You are a helpful company knowledge assistant.
-Your role is to answer questions based on the company documents provided in the context.
-This includes company policies, procedures, product information, pricing, and services.
-Always cite your sources using the format [Source N] when referring to specific information.
-If the context doesn't contain relevant information, say so clearly.
-Be concise, professional, and helpful."""
+        system_prompt = """You are a company knowledge assistant. Your responses are rendered as Markdown.
 
-        user_prompt = f"""Context from company documents:
+CRITICAL: You MUST use the provided context to answer. The context has already been verified as relevant.
+
+RESPONSE RULES:
+1. Start with a DIRECT ANSWER to the question using the provided context
+2. Provide supporting context, examples, and explanations to be genuinely helpful
+3. Cite sources as [Source N]
+4. Do NOT repeat the question or add unnecessary preamble
+5. ALWAYS answer based on what IS in the context, even if it's partial or tangentially related
+6. Only say you cannot answer if the context is completely empty
+
+FORMAT:
+- Use bullet points for lists
+- Use headings (## format) to organize longer responses
+- Keep paragraphs 2-4 sentences
+- Put blank lines before lists and headings
+- Be clear and thorough - include relevant details that help understanding"""
+
+        user_prompt = f"""Context:
 {context}
 
-User Question: {query}
+Question: {query}
 
-Please provide a helpful answer based on the documents above. Cite your sources."""
+Provide a thorough, well-structured answer. Include relevant details and examples from the documents. Cite sources as [Source N]."""
 
         messages = [
             SystemMessage(content=system_prompt),
@@ -196,27 +269,39 @@ Please provide a helpful answer based on the documents above. Cite your sources.
         # Build context from retrieved documents
         context_parts = []
         for i, doc in enumerate(retrieved_docs, 1):
-            display_name = doc.get("metadata", {}).get("display_name", f"Document {i}")
+            file_name = doc.get("metadata", {}).get("file_name", f"Document {i}")
             context_parts.append(
-                f"[Source {i}: {display_name}]\n{doc['content']}\n"
+                f"[Source {i}: {file_name}]\n{doc['content']}\n"
             )
 
         context = "\n".join(context_parts)
 
         # Create messages for the LLM
-        system_prompt = """You are a helpful company knowledge assistant.
-Your role is to answer questions based on the company documents provided in the context.
-This includes company policies, procedures, product information, pricing, and services.
-Always cite your sources using the format [Source N] when referring to specific information.
-If the context doesn't contain relevant information, say so clearly.
-Be concise, professional, and helpful."""
+        system_prompt = """You are a company knowledge assistant. Your responses are rendered as Markdown.
 
-        user_prompt = f"""Context from company documents:
+CRITICAL: You MUST use the provided context to answer. The context has already been verified as relevant.
+
+RESPONSE RULES:
+1. Start with a DIRECT ANSWER to the question using the provided context
+2. Provide supporting context, examples, and explanations to be genuinely helpful
+3. Cite sources as [Source N]
+4. Do NOT repeat the question or add unnecessary preamble
+5. ALWAYS answer based on what IS in the context, even if it's partial or tangentially related
+6. Only say you cannot answer if the context is completely empty
+
+FORMAT:
+- Use bullet points for lists
+- Use headings (## format) to organize longer responses
+- Keep paragraphs 2-4 sentences
+- Put blank lines before lists and headings
+- Be clear and thorough - include relevant details that help understanding"""
+
+        user_prompt = f"""Context:
 {context}
 
-User Question: {query}
+Question: {query}
 
-Please provide a helpful answer based on the documents above. Cite your sources."""
+Provide a thorough, well-structured answer. Include relevant details and examples from the documents. Cite sources as [Source N]."""
 
         # Use OpenAI streaming directly for better control
         stream = self.openai_client.chat.completions.create(
@@ -234,21 +319,36 @@ Please provide a helpful answer based on the documents above. Cite your sources.
             if chunk.choices[0].delta.content:
                 yield chunk.choices[0].delta.content
 
-    def _no_documents_response(self, query: str, user_role: str) -> str:
-        """Generate response when no relevant documents are found"""
-        return (
-            f"I don't have access to information about '{query}' in the SOPs "
-            f"available to your role ({user_role}). This could mean:\n\n"
-            f"• The information isn't covered in our current SOPs\n"
-            f"• The information is restricted to different user roles\n"
-            f"• Try rephrasing your question with different keywords\n\n"
-            f"If you believe you should have access to this information, "
-            f"please contact your administrator."
-        )
+    def _no_documents_response(self, query: str, user_role: str, gap_type: str = "no_documents", top_score: float = 0.0) -> str:
+        """
+        Generate response when no relevant documents pass confidence threshold.
+
+        Args:
+            query: User's query
+            user_role: User's role
+            gap_type: 'no_documents' or 'low_confidence'
+            top_score: Highest similarity score found (for low_confidence)
+        """
+        if gap_type == "low_confidence":
+            return (
+                "I don't have sufficiently relevant documentation to answer your question.\n\n"
+                "**Knowledge Gap Identified**: This topic may need to be documented or existing documentation may need to be updated."
+            )
+        else:
+            return (
+                f"I don't have any documentation about '{query}' available to your role ({user_role}).\n\n"
+                f"**Knowledge Gap Identified**: This topic does not appear to be covered in our current documentation.\n\n"
+                f"- The information may not be documented yet\n"
+                f"- The documentation may be restricted to other roles\n"
+                f"- Try rephrasing your question with different keywords"
+            )
 
     def get_source_citations(self, retrieved_docs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
-        Format source citations from retrieved documents
+        Format source citations from retrieved documents.
+
+        Deduplicates by file_name (keeping highest similarity score) and decodes
+        URL-encoded file names for display.
 
         Args:
             retrieved_docs: Retrieved document chunks
@@ -256,15 +356,29 @@ Please provide a helpful answer based on the documents above. Cite your sources.
         Returns:
             List of citation objects with metadata
         """
+        # Deduplicate by file_name, keeping the doc with highest similarity score
+        seen_files: Dict[str, Dict[str, Any]] = {}
+        for i, doc in enumerate(retrieved_docs):
+            metadata = doc.get("metadata", {})
+            file_name = metadata.get("file_name", f"Document {i + 1}")
+            score = doc.get("similarity_score", 0.0)
+
+            if file_name not in seen_files or score > seen_files[file_name].get("similarity_score", 0.0):
+                seen_files[file_name] = doc
+
+        # Build citations from deduplicated docs
         citations = []
-        for i, doc in enumerate(retrieved_docs, 1):
+        for i, (file_name, doc) in enumerate(seen_files.items(), 1):
             metadata = doc.get("metadata", {})
             content = doc.get("content", "")
+            # Decode URL-encoded characters for display (e.g., %20 -> space)
+            display_name = unquote(file_name)
             citations.append({
                 "id": doc.get("id", str(i)),
                 "number": i,
-                "file_name": metadata.get("file_name", "unknown"),
-                "display_name": metadata.get("display_name", f"Document {i}"),
+                "file_name": file_name,  # Keep original (encoded) for URLs
+                "display_name": display_name,  # Decoded for human readability
+                "file_url": metadata.get("file_url"),  # Link to source document (keep encoded)
                 "category": metadata.get("category", "General"),
                 "page_number": metadata.get("page_number"),
                 "chunk_index": metadata.get("chunk_index"),

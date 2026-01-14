@@ -305,25 +305,52 @@ async def chat_query(
         # Define the streaming response generator
         async def generate_response():
             try:
-                # Step 1: Retrieve relevant documents using RAG
+                # Step 1: Retrieve relevant documents using RAG with confidence filtering
                 user_role = current_user["role"]
-                retrieved_docs = rag_service.search_documents(
+                search_result = rag_service.search_documents_with_confidence(
                     query=query_data.message,
                     user_role=user_role,
-                    top_k=3
+                    top_k=5
                 )
 
-                # Step 2: Generate response using retrieved documents
-                ai_response = rag_service.generate_response(
-                    query=query_data.message,
-                    retrieved_docs=retrieved_docs,
-                    user_role=user_role
-                )
+                # Step 2: Check for knowledge gap
+                if search_result["has_gap"]:
+                    # Determine gap type
+                    gap_type = "no_documents" if search_result["documents_searched"] == 0 else "low_confidence"
+                    ai_response = rag_service._no_documents_response(
+                        query=query_data.message,
+                        user_role=user_role,
+                        gap_type=gap_type,
+                        top_score=search_result["top_score"]
+                    )
+                    citations = []
 
-                # Step 3: Get source citations
-                citations = rag_service.get_source_citations(retrieved_docs)
+                    # Record the knowledge gap in database
+                    try:
+                        db.create_knowledge_gap(
+                            user_id=current_user["id"],
+                            query=query_data.message,
+                            gap_type=gap_type,
+                            conversation_id=query_data.conversation_id,
+                            top_similarity_score=search_result["top_score"],
+                            documents_searched=search_result["documents_searched"],
+                            documents_below_threshold=len(search_result.get("filtered_docs", [])),
+                            confidence_threshold=search_result.get("threshold", 0.75)
+                        )
+                    except Exception as gap_error:
+                        # Log but don't fail the request if gap recording fails
+                        print(f"[WARNING] Failed to record knowledge gap: {gap_error}")
+                else:
+                    # Step 3: Generate response using documents that passed confidence threshold
+                    retrieved_docs = search_result["passing_docs"]
+                    ai_response = rag_service.generate_response(
+                        query=query_data.message,
+                        retrieved_docs=retrieved_docs,
+                        user_role=user_role
+                    )
+                    citations = rag_service.get_source_citations(retrieved_docs)
 
-                # Use ai_response instead of mock_response
+                # Use ai_response
                 mock_response = ai_response
 
                 # Stream the response word by word
@@ -569,23 +596,49 @@ async def regenerate_message(
         # Generate new response using the same logic as /query endpoint
         async def generate_response():
             try:
-                # Step 1: Retrieve relevant documents using RAG
+                # Step 1: Retrieve relevant documents using RAG with confidence filtering
                 user_role = current_user["role"]
-                retrieved_docs = rag_service.search_documents(
+                search_result = rag_service.search_documents_with_confidence(
                     query=user_message["content"],
                     user_role=user_role,
-                    top_k=3
+                    top_k=5
                 )
 
-                # Step 2: Generate response using retrieved documents
-                ai_response = rag_service.generate_response(
-                    query=user_message["content"],
-                    retrieved_docs=retrieved_docs,
-                    user_role=user_role
-                )
+                # Step 2: Check for knowledge gap
+                if search_result["has_gap"]:
+                    gap_type = "no_documents" if search_result["documents_searched"] == 0 else "low_confidence"
+                    ai_response = rag_service._no_documents_response(
+                        query=user_message["content"],
+                        user_role=user_role,
+                        gap_type=gap_type,
+                        top_score=search_result["top_score"]
+                    )
+                    citations = []
 
-                # Step 3: Get source citations
-                citations = rag_service.get_source_citations(retrieved_docs)
+                    # Record the knowledge gap in database
+                    try:
+                        db.create_knowledge_gap(
+                            user_id=current_user["id"],
+                            query=user_message["content"],
+                            gap_type=gap_type,
+                            conversation_id=conversation["id"],
+                            top_similarity_score=search_result["top_score"],
+                            documents_searched=search_result["documents_searched"],
+                            documents_below_threshold=len(search_result.get("filtered_docs", [])),
+                            confidence_threshold=search_result.get("threshold", 0.75)
+                        )
+                    except Exception as gap_error:
+                        # Log but don't fail the request if gap recording fails
+                        print(f"[WARNING] Failed to record knowledge gap: {gap_error}")
+                else:
+                    # Step 3: Generate response using documents that passed confidence threshold
+                    retrieved_docs = search_result["passing_docs"]
+                    ai_response = rag_service.generate_response(
+                        query=user_message["content"],
+                        retrieved_docs=retrieved_docs,
+                        user_role=user_role
+                    )
+                    citations = rag_service.get_source_citations(retrieved_docs)
 
                 # Step 4: Stream the response word by word
                 words = ai_response.split()

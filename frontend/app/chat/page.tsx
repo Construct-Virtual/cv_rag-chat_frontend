@@ -19,6 +19,9 @@ import { Button } from "@/components/Button";
 // Import hooks
 import { useToast } from "@/hooks/useToast";
 
+// Import stores
+import { useChatModeStore } from "@/stores/chatModeStore";
+
 // Import utilities
 import { formatRelativeTime, groupByTimePeriod } from "@/lib/utils";
 
@@ -71,6 +74,32 @@ export default function ChatPage() {
   const [streamingContent, setStreamingContent] = useState("");
   const [streamingSources, setStreamingSources] = useState<Source[]>([]);
 
+  // Helper function to detect "no answer" responses where sources shouldn't be shown
+  const isNoAnswerResponse = (content: string): boolean => {
+    const noAnswerPhrases = [
+      "I don't have sufficiently relevant documentation",
+      "I cannot provide",
+      "Knowledge Gap Identified",
+      "no relevant information",
+      "context is not available",
+      "does not include that information",
+      "don't have any documentation",
+      "cannot answer"
+    ];
+    const lowerContent = content.toLowerCase();
+    return noAnswerPhrases.some(phrase => lowerContent.includes(phrase.toLowerCase()));
+  };
+
+  // Gap analysis state
+  interface GapAnalysisResult {
+    query: string;
+    existing_topics: string[];
+    missing_topics: string[];
+    suggestions: string[];
+    sources: Source[];
+  }
+  const [gapAnalysisResult, setGapAnalysisResult] = useState<GapAnalysisResult | null>(null);
+
   // Title editing state
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState("");
@@ -99,6 +128,9 @@ export default function ChatPage() {
 
   // Toast notifications using the useToast hook
   const { toasts, showToast, dismissToast } = useToast();
+
+  // Chat mode store
+  const { mode, toggleMode } = useChatModeStore();
 
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -226,6 +258,56 @@ export default function ChatPage() {
     const messageText = inputMessage.trim();
     setInputMessage("");
     setIsSending(true);
+    setGapAnalysisResult(null);
+
+    // Handle gap analysis mode
+    if (mode === 'gap_analysis') {
+      try {
+        // Optimistic update
+        const tempMessageId = `temp-${Date.now()}`;
+        const tempUserMessage: LocalMessage = {
+          id: tempMessageId,
+          conversation_id: currentConversation.id,
+          role: "user",
+          content: `[Gap Analysis] ${messageText}`,
+          created_at: new Date().toISOString(),
+          status: "sending"
+        };
+        setMessages([...messages, tempUserMessage]);
+
+        const response = await apiPost(`${process.env.NEXT_PUBLIC_API_URL}/api/gaps/analyze`, {
+          conversation_id: currentConversation.id,
+          message: messageText
+        });
+
+        if (!response.ok) throw new Error("Failed to analyze gaps");
+
+        const result = await response.json();
+        setGapAnalysisResult(result);
+
+        // Update the temp message to show completion
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === tempMessageId ? { ...m, status: "sent" as const } : m
+          )
+        );
+
+        showToast("Gap analysis completed", "success");
+      } catch (err) {
+        console.error("Failed to analyze gaps:", err);
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id.startsWith("temp-") ? { ...m, status: "error" as const } : m
+          )
+        );
+        showToast("Failed to analyze gaps. Please try again.", "error");
+      } finally {
+        setIsSending(false);
+      }
+      return;
+    }
+
+    // Regular answer mode with SSE streaming
     setIsStreaming(true);
     setStreamingContent("");
 
@@ -272,13 +354,12 @@ export default function ChatPage() {
                 fullContent = data.full_content;
                 setStreamingContent(fullContent);
               } else if (data.type === "complete") {
+                // Clear streaming state FIRST to prevent duplicate rendering
                 setStreamingContent("");
                 setIsStreaming(false);
+                setStreamingSources([]);
 
-                if (data.sources?.length > 0) {
-                  setStreamingSources(data.sources);
-                }
-
+                // Load saved messages (which include sources from database)
                 await loadMessages(currentConversation.id);
                 await loadConversations();
               } else if (data.type === "error") {
@@ -464,9 +545,11 @@ export default function ChatPage() {
               if (data.type === "token") {
                 setStreamingContent(data.full_content);
               } else if (data.type === "complete") {
+                // Clear streaming state FIRST to prevent duplicate rendering
                 setStreamingContent("");
                 setIsStreaming(false);
-                if (data.sources?.length > 0) setStreamingSources(data.sources);
+                setStreamingSources([]);
+                // Load saved messages (which include sources from database)
                 await loadMessages(currentConversation.id);
                 await loadConversations();
               } else if (data.type === "error") {
@@ -529,9 +612,11 @@ export default function ChatPage() {
               if (data.type === "token") {
                 setStreamingContent(data.full_content);
               } else if (data.type === "complete") {
+                // Clear streaming state FIRST to prevent duplicate rendering
                 setStreamingContent("");
                 setIsStreaming(false);
-                if (data.sources?.length > 0) setStreamingSources(data.sources);
+                setStreamingSources([]);
+                // Load saved messages (which include sources from database)
                 await loadMessages(currentConversation.id);
                 await loadConversations();
               } else if (data.type === "error") {
@@ -1100,7 +1185,7 @@ export default function ChatPage() {
                                 )}
                               </div>
 
-                              {message.role === "assistant" && message.sources && message.sources.length > 0 && (
+                              {message.role === "assistant" && message.sources && message.sources.length > 0 && !isNoAnswerResponse(message.content) && (
                                 <div className="mt-4 pt-4 border-t border-theme">
                                   <div className="text-xs font-semibold mb-2 opacity-70">Sources:</div>
                                   <div className="space-y-2">
@@ -1165,23 +1250,13 @@ export default function ChatPage() {
                         );
                       })}
 
-                      {/* Streaming message */}
-                      {isStreaming && streamingContent && (
+                      {/* Streaming message - shows during streaming */}
+                      {streamingContent && (
                         <div className="flex justify-start" role="status" aria-live="polite" aria-label="AI is responding">
                           <div className="max-w-[80%] rounded-lg px-4 py-3 bg-theme-secondary text-theme-primary border border-theme">
                             <div className="text-xs opacity-70 mb-1">AI Assistant</div>
-                            <div className="text-sm whitespace-pre-wrap">{streamingContent}</div>
-                            <div className="inline-block w-1 h-4 bg-accent-primary animate-pulse ml-1" aria-hidden="true" />
-                            {streamingSources.length > 0 && (
-                              <div className="mt-4 pt-4 border-t border-theme">
-                                <div className="text-xs font-semibold mb-2 opacity-70">Sources:</div>
-                                <div className="space-y-2">
-                                  {streamingSources.map((source) => (
-                                    <SourceCitation key={source.id} source={source} />
-                                  ))}
-                                </div>
-                              </div>
-                            )}
+                            <Markdown content={streamingContent} isStreaming={isStreaming} />
+                            {isStreaming && <div className="inline-block w-1 h-4 bg-accent-primary animate-pulse ml-1" aria-hidden="true" />}
                           </div>
                         </div>
                       )}
@@ -1189,16 +1264,74 @@ export default function ChatPage() {
                       {/* Typing indicator */}
                       {isStreaming && !streamingContent && <TypingIndicator />}
 
-                      {/* Sources after streaming */}
-                      {!isStreaming && streamingSources.length > 0 && (
-                        <div className="flex justify-start">
-                          <div className="max-w-[80%] rounded-lg px-4 py-3 bg-theme-secondary text-theme-primary border border-theme">
-                            <div className="text-xs font-semibold mb-2 opacity-70">Sources:</div>
-                            <div className="space-y-2">
-                              {streamingSources.map((source) => (
-                                <SourceCitation key={source.id} source={source} />
-                              ))}
-                            </div>
+                      {/* Gap Analysis Results */}
+                      {gapAnalysisResult && (
+                        <div className="flex justify-start animate-message-in">
+                          <div className="max-w-[90%] rounded-lg px-4 py-4 bg-purple-900/30 text-theme-primary border border-purple-500/50">
+                            <div className="text-xs font-semibold mb-3 text-purple-400">Gap Analysis Results</div>
+
+                            {/* Existing Topics */}
+                            {gapAnalysisResult.existing_topics.length > 0 && (
+                              <div className="mb-4">
+                                <div className="text-xs font-medium text-green-400 mb-2 flex items-center gap-1">
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                  Topics Covered ({gapAnalysisResult.existing_topics.length})
+                                </div>
+                                <ul className="text-sm space-y-1 pl-5">
+                                  {gapAnalysisResult.existing_topics.map((topic, idx) => (
+                                    <li key={idx} className="text-theme-secondary list-disc">{topic}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+
+                            {/* Missing Topics */}
+                            {gapAnalysisResult.missing_topics.length > 0 && (
+                              <div className="mb-4">
+                                <div className="text-xs font-medium text-red-400 mb-2 flex items-center gap-1">
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                  </svg>
+                                  Missing Topics ({gapAnalysisResult.missing_topics.length})
+                                </div>
+                                <ul className="text-sm space-y-1 pl-5">
+                                  {gapAnalysisResult.missing_topics.map((topic, idx) => (
+                                    <li key={idx} className="text-theme-secondary list-disc">{topic}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+
+                            {/* Suggestions */}
+                            {gapAnalysisResult.suggestions.length > 0 && (
+                              <div className="mb-4">
+                                <div className="text-xs font-medium text-blue-400 mb-2 flex items-center gap-1">
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                                  </svg>
+                                  Suggestions ({gapAnalysisResult.suggestions.length})
+                                </div>
+                                <ul className="text-sm space-y-1 pl-5">
+                                  {gapAnalysisResult.suggestions.map((suggestion, idx) => (
+                                    <li key={idx} className="text-theme-secondary list-disc">{suggestion}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+
+                            {/* Sources from Gap Analysis */}
+                            {gapAnalysisResult.sources && gapAnalysisResult.sources.length > 0 && (
+                              <div className="mt-4 pt-4 border-t border-purple-500/30">
+                                <div className="text-xs font-semibold mb-2 opacity-70">Related Sources:</div>
+                                <div className="space-y-2">
+                                  {gapAnalysisResult.sources.map((source) => (
+                                    <SourceCitation key={source.id} source={source} />
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </div>
                       )}
@@ -1211,6 +1344,26 @@ export default function ChatPage() {
                 {/* Input Area */}
                 <div className="border-t border-theme bg-theme-secondary p-3 md:p-4">
                   <div className="max-w-4xl mx-auto">
+                    {/* Mode Toggle */}
+                    <div className="flex items-center gap-2 mb-2">
+                      <button
+                        onClick={toggleMode}
+                        className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                          mode === 'answer'
+                            ? 'bg-blue-500 text-white'
+                            : 'bg-purple-500 text-white'
+                        }`}
+                        type="button"
+                        aria-label={`Current mode: ${mode === 'answer' ? 'Answer Mode' : 'Gap Analysis'}. Click to toggle.`}
+                      >
+                        {mode === 'answer' ? 'Answer Mode' : 'Gap Analysis'}
+                      </button>
+                      <span className="text-xs text-theme-muted">
+                        {mode === 'answer'
+                          ? 'Get answers based on your documents'
+                          : 'Analyze knowledge gaps in your documents'}
+                      </span>
+                    </div>
                     <form onSubmit={sendMessage} className="flex gap-2" role="form" aria-label="Send message">
                       <label htmlFor="message-input" className="sr-only">Type your message</label>
                       <input

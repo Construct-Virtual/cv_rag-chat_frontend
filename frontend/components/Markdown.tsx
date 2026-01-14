@@ -1,101 +1,58 @@
 'use client';
 
-import { useState, useCallback, memo } from 'react';
+import { memo, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import hljs from 'highlight.js';
-import 'highlight.js/styles/github-dark.css';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import type { Options as RehypeKatexOptions } from 'rehype-katex';
+import { CodeBlock } from './markdown/CodeBlock';
+import { processMarkdown, processStreamingMarkdown } from '../app/utils/markdown-processor';
+
+// Configure rehype-katex options
+// Note: rehype-katex handles displayMode and throwOnError internally
+const rehypeKatexOptions: RehypeKatexOptions = {
+  // Color for error messages
+  errorColor: '#ff6b6b',
+  // Allow all LaTeX commands (needed for complex formulas)
+  strict: false,
+  // Trust the input (since we control it)
+  trust: true,
+  // Output mode
+  output: 'html',
+};
 
 interface MarkdownProps {
   content: string;
   className?: string;
+  isStreaming?: boolean;
 }
 
-interface CodeBlockProps {
-  language: string;
-  code: string;
-}
-
-function CodeBlock({ language, code }: CodeBlockProps) {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = useCallback(async () => {
-    try {
-      await navigator.clipboard.writeText(code);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      console.error('Failed to copy code');
-    }
-  }, [code]);
-
-  // Highlight the code
-  let highlightedCode: string;
-  try {
-    if (language && hljs.getLanguage(language)) {
-      highlightedCode = hljs.highlight(code, { language }).value;
-    } else {
-      highlightedCode = hljs.highlightAuto(code).value;
-    }
-  } catch {
-    highlightedCode = code;
-  }
-
-  return (
-    <div className="relative group my-3 rounded-lg overflow-hidden bg-[#0D1117] border border-[#30363D]">
-      {/* Header with language and copy button */}
-      <div className="flex items-center justify-between px-4 py-2 bg-[#161B22] border-b border-[#30363D]">
-        <span className="text-xs text-[#8B949E] font-mono">
-          {language || 'code'}
-        </span>
-        <button
-          onClick={handleCopy}
-          className="flex items-center gap-1.5 px-2 py-1 text-xs text-[#8B949E] hover:text-white bg-transparent hover:bg-[#30363D] rounded transition-colors duration-200"
-          title={copied ? 'Copied!' : 'Copy code'}
-          aria-label={copied ? 'Copied!' : 'Copy code'}
-        >
-          {copied ? (
-            <>
-              <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
-              <span>Copied!</span>
-            </>
-          ) : (
-            <>
-              <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-              </svg>
-              <span>Copy</span>
-            </>
-          )}
-        </button>
-      </div>
-      {/* Code content */}
-      <pre className="p-4 overflow-x-auto">
-        <code
-          className={`hljs language-${language || 'plaintext'} text-sm font-mono`}
-          dangerouslySetInnerHTML={{ __html: highlightedCode }}
-        />
-      </pre>
-    </div>
-  );
-}
-
-// Inline code component
+// Inline code component - uses CSS variables for theme-aware styling
 function InlineCode({ children }: { children: React.ReactNode }) {
   return (
-    <code className="px-1.5 py-0.5 mx-0.5 rounded bg-[#30363D] text-[#E6EDF3] text-sm font-mono">
+    <code className="px-1.5 py-0.5 mx-0.5 rounded bg-[var(--color-code-inline-bg)] text-[var(--color-code-inline-text)] text-sm font-mono">
       {children}
     </code>
   );
 }
 
-export const Markdown = memo(function Markdown({ content, className = '' }: MarkdownProps) {
+export const Markdown = memo(function Markdown({ content, className = '', isStreaming = false }: MarkdownProps) {
+  // Process markdown to fix formatting issues from LLM output
+  const processedContent = useMemo(() => {
+    if (isStreaming) {
+      // Use lighter processing during streaming to avoid breaking partial content
+      return processStreamingMarkdown(content);
+    }
+    // Full processing for complete content
+    return processMarkdown(content);
+  }, [content, isStreaming]);
+
   return (
     <div className={`markdown-content ${className}`}>
       <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
+        remarkPlugins={[remarkGfm, remarkMath]}
+        rehypePlugins={[[rehypeKatex, rehypeKatexOptions]]}
       components={{
         // Code blocks and inline code
         code({ className, children, ...props }) {
@@ -106,31 +63,41 @@ export const Markdown = memo(function Markdown({ content, className = '' }: Mark
           const isCodeBlock = match || codeString.includes('\n');
 
           if (isCodeBlock) {
-            return <CodeBlock language={match?.[1] || ''} code={codeString} />;
+            return <CodeBlock language={match?.[1] || ''} code={codeString} isStreaming={isStreaming} />;
           }
 
           return <InlineCode {...props}>{children}</InlineCode>;
         },
-        // Paragraph styling
+        // Paragraph styling - mb-4 for adequate spacing between paragraphs
         p({ children }) {
-          return <p className="mb-3 last:mb-0 leading-relaxed">{children}</p>;
+          return <p className="mb-4 last:mb-0 leading-relaxed">{children}</p>;
         },
-        // Headers
+        // Headers - standardized spacing for consistent vertical rhythm
+        // h1: mt-6 mb-4, h2: mt-5 mb-3, h3: mt-4 mb-2, h4-h6: mt-3 mb-2
         h1({ children }) {
-          return <h1 className="text-xl font-bold mb-3 mt-4 first:mt-0">{children}</h1>;
+          return <h1 className="block text-xl font-bold mt-6 mb-4 first:mt-0">{children}</h1>;
         },
         h2({ children }) {
-          return <h2 className="text-lg font-semibold mb-2 mt-3 first:mt-0">{children}</h2>;
+          return <h2 className="block text-lg font-semibold mt-5 mb-3 first:mt-0">{children}</h2>;
         },
         h3({ children }) {
-          return <h3 className="text-base font-semibold mb-2 mt-3 first:mt-0">{children}</h3>;
+          return <h3 className="block text-base font-semibold mt-4 mb-2 first:mt-0">{children}</h3>;
         },
-        // Lists
+        h4({ children }) {
+          return <h4 className="block text-base font-semibold mt-3 mb-2 first:mt-0">{children}</h4>;
+        },
+        h5({ children }) {
+          return <h5 className="block text-sm font-semibold mt-3 mb-2 first:mt-0">{children}</h5>;
+        },
+        h6({ children }) {
+          return <h6 className="block text-sm font-semibold mt-3 mb-2 first:mt-0">{children}</h6>;
+        },
+        // Lists - use list-outside with left padding for proper text alignment on wrap
         ul({ children }) {
-          return <ul className="list-disc list-inside mb-3 space-y-1">{children}</ul>;
+          return <ul className="list-disc list-outside pl-5 mb-3 space-y-1">{children}</ul>;
         },
         ol({ children }) {
-          return <ol className="list-decimal list-inside mb-3 space-y-1">{children}</ol>;
+          return <ol className="list-decimal list-outside pl-5 mb-3 space-y-1">{children}</ol>;
         },
         li({ children }) {
           return <li className="leading-relaxed">{children}</li>;
@@ -138,7 +105,7 @@ export const Markdown = memo(function Markdown({ content, className = '' }: Mark
         // Blockquote
         blockquote({ children }) {
           return (
-            <blockquote className="border-l-4 border-[#3B82F6] pl-4 py-1 my-3 text-[#A3A3A3] italic">
+            <blockquote className="border-l-4 border-[var(--color-blockquote-border)] bg-[var(--color-blockquote-bg)] pl-4 py-2 my-3 text-[var(--color-blockquote-text)] italic">
               {children}
             </blockquote>
           );
@@ -150,7 +117,7 @@ export const Markdown = memo(function Markdown({ content, className = '' }: Mark
               href={href}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[#3B82F6] hover:text-[#60A5FA] underline underline-offset-2"
+              className="text-[#3B82F6] hover:text-[#60A5FA] underline decoration-1 decoration-from-font"
             >
               {children}
             </a>
@@ -158,45 +125,55 @@ export const Markdown = memo(function Markdown({ content, className = '' }: Mark
         },
         // Horizontal rule
         hr() {
-          return <hr className="my-4 border-[#2A2A2A]" />;
+          return <hr className="my-4 border-[var(--color-border)]" />;
         },
         // Tables (GFM)
         table({ children }) {
           return (
-            <div className="overflow-x-auto my-3">
-              <table className="min-w-full border-collapse border border-[#30363D]">
+            <div className="overflow-x-auto my-4 rounded-lg border border-[var(--color-border)]">
+              <table className="min-w-full border-collapse">
                 {children}
               </table>
             </div>
           );
         },
         thead({ children }) {
-          return <thead className="bg-[#161B22]">{children}</thead>;
+          return <thead className="bg-[var(--color-bg-tertiary)]">{children}</thead>;
+        },
+        tbody({ children }) {
+          return <tbody className="divide-y divide-[var(--color-border)]">{children}</tbody>;
+        },
+        tr({ children }) {
+          return <tr className="hover:bg-[var(--color-bg-secondary)] transition-colors">{children}</tr>;
         },
         th({ children }) {
           return (
-            <th className="px-4 py-2 text-left text-sm font-semibold border border-[#30363D]">
+            <th className="px-4 py-3 text-left text-sm font-semibold text-[var(--color-text-primary)] border-b border-[var(--color-border)] break-words">
               {children}
             </th>
           );
         },
         td({ children }) {
           return (
-            <td className="px-4 py-2 text-sm border border-[#30363D]">
+            <td className="px-4 py-3 text-sm text-[var(--color-text-primary)] break-words">
               {children}
             </td>
           );
         },
         // Strong and emphasis
         strong({ children }) {
-          return <strong className="font-semibold">{children}</strong>;
+          return <strong className="font-bold">{children}</strong>;
         },
         em({ children }) {
           return <em className="italic">{children}</em>;
         },
+        // Strikethrough (GFM)
+        del({ children }) {
+          return <del className="line-through text-[var(--color-text-muted)]">{children}</del>;
+        },
       }}
       >
-        {content}
+        {processedContent}
       </ReactMarkdown>
     </div>
   );

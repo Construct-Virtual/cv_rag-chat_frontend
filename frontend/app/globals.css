@@ -28,8 +28,17 @@
   --color-shimmer-from: #2A2A2A;
   --color-shimmer-via: #3A3A3A;
 
+  --color-code-inline-bg: #30363D;
+  --color-code-inline-text: #E6EDF3;
+
+  --color-blockquote-border: #3B82F6;
+  --color-blockquote-bg: rgba(59, 130, 246, 0.05);
+  --color-blockquote-text: #A1A1A1;
+
   --color-card-shadow: rgba(0, 0, 0, 0.3);
   --color-dropdown-shadow: rgba(0, 0, 0, 0.4);
+
+  --color-error: #EF4444;
 }
 
 /* Light theme overrides */
@@ -59,8 +68,17 @@
   --color-shimmer-from: #E5E7EB;
   --color-shimmer-via: #F3F4F6;
 
+  --color-code-inline-bg: #E5E7EB;
+  --color-code-inline-text: #1F2937;
+
+  --color-blockquote-border: #3B82F6;
+  --color-blockquote-bg: rgba(59, 130, 246, 0.08);
+  --color-blockquote-text: #4B5563;
+
   --color-card-shadow: rgba(0, 0, 0, 0.1);
   --color-dropdown-shadow: rgba(0, 0, 0, 0.15);
+
+  --color-error: #DC2626;
 }
 
 /* ===== F82: Theme transition for smooth switching ===== */
@@ -605,4 +623,306 @@ html.light {
       opacity: 0;
     }
   }
+}
+
+/* Markdown Content Typography */
+.markdown-content {
+  /* Base settings */
+  line-height: 1.75;
+
+  /* Headings - Standardized spacing for consistent vertical rhythm
+     h1: mt-6 (1.5rem) mb-4 (1rem)
+     h2: mt-5 (1.25rem) mb-3 (0.75rem)
+     h3: mt-4 (1rem) mb-2 (0.5rem)
+     h4-h6: mt-3 (0.75rem) mb-2 (0.5rem) */
+  h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-color, #30363D);
+  }
+
+  h1:first-child {
+    margin-top: 0;
+  }
+
+  h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-top: 1.25rem;
+    margin-bottom: 0.75rem;
+    color: #D97706; /* Warm amber accent */
+  }
+
+  h2:first-child {
+    margin-top: 0;
+  }
+
+  h3 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  h3:first-child {
+    margin-top: 0;
+  }
+
+  h4, h5, h6 {
+    font-weight: 600;
+    margin-top: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+
+  h4:first-child, h5:first-child, h6:first-child {
+    margin-top: 0;
+  }
+
+  /* Paragraphs - mb-4 (1rem) for adequate spacing between paragraphs */
+  p {
+    margin-bottom: 1rem;
+  }
+
+  p:last-child {
+    margin-bottom: 0;
+  }
+
+  /* Lists */
+  ul, ol {
+    padding-left: 1.5rem;
+    margin-bottom: 0.75rem;
+    list-style-position: outside;
+  }
+
+  ul {
+    list-style-type: disc;
+  }
+
+  ul li::marker {
+    color: #3B82F6; /* Blue accent for bullets */
+  }
+
+  ol {
+    list-style-type: decimal;
+  }
+
+  li {
+    margin-bottom: 0.25rem;
+  }
+
+  /* Nested lists - progressive indentation */
+  ul ul,
+  ol ol,
+  ul ol,
+  ol ul {
+    margin-left: 1rem;
+    margin-top: 0.25rem;
+    margin-bottom: 0.25rem;
+  }
+
+  /* Second level nesting */
+  ul ul ul,
+  ol ol ol,
+  ul ul ol,
+  ul ol ul,
+  ol ul ul,
+  ol ol ul,
+  ol ul ol,
+  ul ol ol {
+    margin-left: 1rem;
+  }
+
+  /* Blockquotes */
+  blockquote {
+    border-left: 4px solid var(--color-blockquote-border);
+    padding-left: 1rem;
+    margin: 1rem 0;
+    background: var(--color-blockquote-bg);
+    border-radius: 0 0.5rem 0.5rem 0;
+    padding: 0.75rem 1rem;
+    color: var(--color-blockquote-text);
+    font-style: italic;
+  }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0;
+  }
+
+  thead {
+    background: var(--color-bg-tertiary);
+  }
+
+  tbody {
+    border-top: 1px solid var(--color-border);
+  }
+
+  th {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--color-border);
+    text-align: left;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    word-break: break-word;
+    overflow-wrap: break-word;
+  }
+
+  td {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    color: var(--color-text-primary);
+    word-break: break-word;
+    overflow-wrap: break-word;
+  }
+
+  tr {
+    border-bottom: 1px solid var(--color-border);
+    transition: background-color 150ms ease;
+  }
+
+  tr:last-child {
+    border-bottom: none;
+  }
+
+  tbody tr:hover {
+    background: var(--color-bg-secondary);
+  }
+
+  tr:nth-child(even) {
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  tr:nth-child(even):hover {
+    background: var(--color-bg-secondary);
+  }
+
+  /* Inline code */
+  code:not(pre code) {
+    background: var(--color-code-inline-bg);
+    color: var(--color-code-inline-text);
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+  }
+}
+
+/* Light theme overrides for markdown content */
+html.light .markdown-content,
+[data-theme="light"] .markdown-content {
+  h1 {
+    border-bottom-color: var(--color-border);
+  }
+
+  h2 {
+    color: #B45309; /* Darker amber for light theme */
+  }
+
+  /* Blockquote styling now uses CSS variables, no override needed */
+
+  thead {
+    background: var(--color-bg-tertiary);
+  }
+
+  th, td {
+    border-color: var(--color-border);
+  }
+
+  tr:nth-child(even) {
+    background: rgba(0, 0, 0, 0.04);
+  }
+
+  tr:nth-child(even):hover {
+    background: var(--color-bg-secondary);
+  }
+
+  /* Inline code now uses CSS variables, no override needed */
+}
+
+/* ===== KaTeX Math Rendering Styles ===== */
+/* Ensure KaTeX renders properly in both dark and light themes */
+
+/* Base KaTeX styling */
+.katex {
+  font-size: 1.1em;
+  color: var(--color-text-primary);
+}
+
+/* Inline math styling */
+.markdown-content .katex-inline,
+.markdown-content span.katex {
+  display: inline;
+  vertical-align: baseline;
+  margin: 0 0.25rem;
+}
+
+/* Block/display math styling */
+.markdown-content .katex-display {
+  display: block;
+  margin: 1rem 0;
+  padding: 1rem;
+  overflow-x: auto;
+  text-align: center;
+  background: var(--color-bg-secondary);
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-border);
+}
+
+.markdown-content .katex-display > .katex {
+  display: inline-block;
+  text-align: center;
+}
+
+/* Ensure proper spacing for math within paragraphs */
+.markdown-content p .katex {
+  margin: 0 0.1em;
+}
+
+/* Dark theme specific KaTeX overrides */
+.katex .mord,
+.katex .mbin,
+.katex .mrel,
+.katex .mopen,
+.katex .mclose,
+.katex .mpunct,
+.katex .minner,
+.katex .mop {
+  color: var(--color-text-primary);
+}
+
+/* Ensure fractions and other structures are visible */
+.katex .frac-line {
+  border-color: var(--color-text-primary);
+  background: var(--color-text-primary);
+}
+
+.katex .sqrt > .root {
+  color: var(--color-text-primary);
+}
+
+.katex .sqrt > .sqrt-sign {
+  color: var(--color-text-primary);
+}
+
+/* Light theme KaTeX styling */
+html.light .katex,
+[data-theme="light"] .katex {
+  color: var(--color-text-primary);
+}
+
+html.light .markdown-content .katex-display,
+[data-theme="light"] .markdown-content .katex-display {
+  background: var(--color-bg-tertiary);
+  border-color: var(--color-border);
+}
+
+html.light .katex .frac-line,
+[data-theme="light"] .katex .frac-line {
+  border-color: var(--color-text-primary);
+  background: var(--color-text-primary);
 }

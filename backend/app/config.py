@@ -15,10 +15,11 @@ class Settings(BaseSettings):
     # RAG Settings
     embedding_model: str = "text-embedding-3-small"
     embedding_dimensions: int = 1536
-    llm_model: str = "gpt-4o"
-    llm_temperature: float = 0.7
-    llm_max_tokens: int = 1024
+    llm_model: str = "gpt-4.1-mini"
+    llm_temperature: float = 0.4
+    llm_max_tokens: int = 2500
     rag_top_k: int = 5  # Number of documents to retrieve
+    rag_confidence_threshold: float = 0.20  # Minimum similarity score (lowered for hybrid search where keyword=0 reduces score)
 
     # JWT
     jwt_secret_key: str
@@ -32,7 +33,7 @@ class Settings(BaseSettings):
     debug: bool = True
 
     # CORS
-    cors_origins: str = "http://localhost:3000"
+    cors_origins: str = "http://localhost:3000,http://localhost:3001"
 
     @property
     def cors_origins_list(self) -> List[str]:

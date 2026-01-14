@@ -75,19 +75,8 @@ export function MessageList({
         {/* Typing indicator (waiting for first token) */}
         {isStreaming && !streamingContent && <TypingIndicator />}
 
-        {/* Sources after streaming completes (if not attached to message) */}
-        {!isStreaming && streamingSources.length > 0 && messages.length > 0 && (
-          <div className="flex justify-start">
-            <div className="max-w-[80%] rounded-lg px-4 py-3 bg-[#1A1A1A] text-[#F5F5F5] border border-[#2A2A2A]">
-              <div className="text-xs font-semibold mb-2 opacity-70">Sources:</div>
-              <div className="space-y-2">
-                {streamingSources.map((source) => (
-                  <SourceCitation key={source.id} source={source} />
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Sources after streaming completes are now part of the saved message */}
+        {/* Removed duplicate rendering - MessageBubble handles message.sources */}
 
         <div ref={bottomRef} />
       </div>

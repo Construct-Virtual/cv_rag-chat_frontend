@@ -90,6 +90,28 @@ export function SourceCitation({ source, compact = false }: SourceCitationProps)
           <p className="text-gray-300 italic leading-relaxed">
             &quot;{source.excerpt}&quot;
           </p>
+          {source.file_url && (
+            <a
+              href={source.file_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 mt-2 text-blue-400 hover:text-blue-300 hover:underline text-xs font-medium"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <svg
+                width="12"
+                height="12"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3" />
+              </svg>
+              View Document
+            </a>
+          )}
         </div>
       </div>
     </div>
