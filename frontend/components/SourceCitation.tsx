@@ -52,10 +52,6 @@ export function SourceCitation({ source, compact = false }: SourceCitationProps)
             <div className="text-[10px] text-gray-500 mt-0.5">
               {source.category}
               {source.page_number && ` - Page ${source.page_number}`}
-              {' - '}
-              <span className="text-emerald-500">
-                {(source.similarity_score * 100).toFixed(0)}% match
-              </span>
             </div>
           </div>
           <svg
